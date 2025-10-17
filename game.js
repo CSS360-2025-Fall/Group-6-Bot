@@ -2,6 +2,10 @@ import { capitalize } from './utils.js';
 
 export function getResult(p1, p2) {
   let gameResult;
+  let payoutMessage = '';
+  
+  const wager = p1.wager || 0;
+
   if (RPSChoices[p1.objectName] && RPSChoices[p1.objectName][p2.objectName]) {
     // o1 wins
     gameResult = {
@@ -9,6 +13,7 @@ export function getResult(p1, p2) {
       lose: p2,
       verb: RPSChoices[p1.objectName][p2.objectName],
     };
+   payoutMessage = `<@${p1.id}> wins and earns ${wager * 2}.`;
   } else if (
     RPSChoices[p2.objectName] &&
     RPSChoices[p2.objectName][p1.objectName]
@@ -19,19 +24,23 @@ export function getResult(p1, p2) {
       lose: p1,
       verb: RPSChoices[p2.objectName][p1.objectName],
     };
+   payoutMessage = `<@${p1.id}> loses and gets 0.`;
   } else {
     // tie -- win/lose don't
     gameResult = { win: p1, lose: p2, verb: 'tie' };
+    payoutMessage = `It is a tie! <@${p1.id}> gets back ${wager}.`;
   }
-
-  return formatResult(gameResult);
+ if(p1.wager == 0) payoutMessage = 'no wager'; 
+  return formatResult(gameResult, payoutMessage);
 }
 
-function formatResult(result) {
+function formatResult(result, payoutMessage) {
   const { win, lose, verb } = result;
-  return verb === 'tie'
+
+  const gameMessage = verb === 'tie'
     ? `<@${win.id}> and <@${lose.id}> draw with **${win.objectName}**`
     : `<@${win.id}>'s **${win.objectName}** ${verb} <@${lose.id}>'s **${lose.objectName}**`;
+	return `${gameMessage}\n${payoutMessage}`;
 }
 
 // this is just to figure out winner + verb
