@@ -1,0 +1,5 @@
+[
+    {"user":"John", "points": 500, "games_played": 4},
+    {"user":"Alice", "points": 750, "games_played": 5},
+    {"user":"Bob", "points": 300, "games_played": 2}
+]
