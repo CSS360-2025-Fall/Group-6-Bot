@@ -4,7 +4,7 @@ export function getResult(p1, p2) {
   let gameResult;
   let payoutMessage = '';
   
-  const wager = p1.wager || 0;
+  const wager = Number(p1.wager) || 0;
 
   if (RPSChoices[p1.objectName] && RPSChoices[p1.objectName][p2.objectName]) {
     // o1 wins
@@ -29,7 +29,7 @@ export function getResult(p1, p2) {
     // tie -- win/lose don't
    if(wager > 0)  gameResult = { win: p1, lose: p2, verb: 'tie' };
     payoutMessage = `It is a tie! <@${p1.id}> gets back ${wager}.`;
-  } 
+  }
   return formatResult(gameResult, payoutMessage);
 }
 
