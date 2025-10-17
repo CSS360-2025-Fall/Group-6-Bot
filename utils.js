@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import fs from 'fs';
 
 export async function DiscordRequest(endpoint, options) {
   // append endpoint to root API URL
@@ -45,4 +46,33 @@ export function getRandomEmoji() {
 
 export function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+// Load and parse the leaderboard data from JSON file
+// Expects: key specifying which field to sort by, and n number of top entries to display
+export function getLeaderboard(key, n) {
+  const rawData = fs.readFileSync('./data/leaderboard.json', 'utf-8');
+  const leaderboard = JSON.parse(rawData);
+
+  // Sort by key descending
+  leaderboard.sort((a, b) => b[key] - a[key]);
+
+  // If there arent enough entries, adjust n
+  if (leaderboard.length < n) {
+      n = leaderboard.length;
+  }
+
+  // Create leaderboard string
+  let result = 'Leaderboard:\n';
+
+  // Add top n entries to result
+  leaderboard.slice(0, n).forEach((entry, index) => {
+      result += (`#${index + 1}: ${entry.user} - ${entry.points} points - ${entry.games_played} games played`);
+      if (index < n - 1) {
+          result += ('\n');
+      }
+  });
+
+  // Return completed leaderboard as string
+  return result;
 }
