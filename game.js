@@ -13,7 +13,7 @@ export function getResult(p1, p2) {
       lose: p2,
       verb: RPSChoices[p1.objectName][p2.objectName],
     };
-   payoutMessage = `<@${p1.id}> wins and earns ${wager * 2}.`;
+   if(wager > 0) payoutMessage = `<@${p1.id}> wins and earns ${wager * 2}.`;
   } else if (
     RPSChoices[p2.objectName] &&
     RPSChoices[p2.objectName][p1.objectName]
@@ -24,13 +24,12 @@ export function getResult(p1, p2) {
       lose: p1,
       verb: RPSChoices[p2.objectName][p1.objectName],
     };
-   payoutMessage = `<@${p1.id}> loses and gets 0.`;
+  if (wager > 0)  payoutMessage = `<@${p1.id}> loses and gets 0.`;
   } else {
     // tie -- win/lose don't
-    gameResult = { win: p1, lose: p2, verb: 'tie' };
+   if(wager > 0)  gameResult = { win: p1, lose: p2, verb: 'tie' };
     payoutMessage = `It is a tie! <@${p1.id}> gets back ${wager}.`;
-  }
- if(p1.wager == 0) payoutMessage = 'no wager'; 
+  } 
   return formatResult(gameResult, payoutMessage);
 }
 
