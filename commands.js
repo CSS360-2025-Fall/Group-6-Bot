@@ -88,8 +88,16 @@ const UPDATE_LEADERBOARD_COMMAND = {
   contexts: [0, 1, 2]
 };
 
+const WORDLE_COMMAND = {
+  name: 'dwordle',
+  description: 'Start a game of Wordle',
+  type: 1,
+  integration_types: [0, 1],
+  contexts: [0, 2],
+};
+
 const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND, LEADERBOARD_COMMAND,
-UPDATE_LEADERBOARD_COMMAND];
+UPDATE_LEADERBOARD_COMMAND, WORDLE_COMMAND];
 
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
