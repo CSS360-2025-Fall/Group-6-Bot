@@ -1,7 +1,12 @@
 [
   {
-    "user": "JohnDoe",
-    "points": 0,
-    "games_played": 0
+    "user": "Asher",
+    "points": 250,
+    "games_played": 5
+  },
+  {
+    "user": "Kaylea",
+    "points": 150,
+    "games_played": 3
   }
 ]

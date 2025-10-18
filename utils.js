@@ -54,6 +54,11 @@ export function getLeaderboard(key, n) {
   const rawData = fs.readFileSync('./data/leaderboard.json', 'utf-8');
   const leaderboard = JSON.parse(rawData);
 
+  // If leaderboard is empty, return message
+  if (leaderboard.length === 0) {
+      return 'Leaderboard is empty.';
+  }
+
   // Sort by key descending
   leaderboard.sort((a, b) => b[key] - a[key]);
 
@@ -88,9 +93,15 @@ export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 1) {
 
   // If not found, create new entry
   if (!userEntry) {
-      userEntry = {user: userId, points: pointsToAdd, gamesPlayedToAdd: 0};
+      userEntry = {user: userId, points: pointsToAdd, games_played: gamesPlayedToAdd};
       leaderboard.push(userEntry);
+      
+  } else {
+    // If found, update points and games played
+    userEntry.points += pointsToAdd;
+    userEntry.games_played += gamesPlayedToAdd;
   }
 
+  // Write updated leaderboard back to file
   fs.writeFileSync('./data/leaderboard.json', JSON.stringify(leaderboard, null, 2));
 }

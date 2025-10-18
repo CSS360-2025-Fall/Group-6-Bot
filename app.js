@@ -228,32 +228,34 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
       // Read and parse message for input parameters
       const params = req.body.data.options || [];
       let userId = null;
-      let pointsToAdd = 0;
-      let gamesPlayedToAdd = 0;
+      let pointsToAdd = null;
+      let gamesPlayedToAdd = null;
 
       for (let param of params) {
         if (param.name === 'user') {
           userId = param.value;
         } else if (param.name === 'points') {
           pointsToAdd = param.value;
-        } else if (param.name === 'games_played') {
+        } else if (param.name === 'games') {
           gamesPlayedToAdd = param.value;
         }
       }
 
-      // Update leaderboard data
-      if (gamesPlayedToAdd > 0) {
-        updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd);
-      } else {
-        updateLeaderboard(userId, pointsToAdd);
-      }
-
-      let messageContent = `Leaderboard updated for user ${userId}`;
+      let messageContent = `Leaderboard updated for ${userId}`;
 
       if (userId === null) {
         messageContent = 'Error: Please specify user';
-      } else if (pointsToAdd === 0) {
+        return;
+      } else if (pointsToAdd === null) {
         messageContent = 'Error: Please specify points amount';
+        return;
+      }
+
+      // Update leaderboard data
+      if (gamesPlayedToAdd !== null) {
+        updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd);
+      } else {
+        updateLeaderboard(userId, pointsToAdd);
       }
 
       // Send a message into the channel where command was triggered from
