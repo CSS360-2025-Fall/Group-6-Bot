@@ -95,9 +95,8 @@ export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 1) {
   if (!userEntry) {
       userEntry = {user: userId, points: pointsToAdd, games_played: gamesPlayedToAdd};
       leaderboard.push(userEntry);
-      
   } else {
-    // If found, update points and games played
+    // If found update points and games played
     userEntry.points += pointsToAdd;
     userEntry.games_played += gamesPlayedToAdd;
   }
