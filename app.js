@@ -41,6 +41,75 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
   if (type === InteractionType.APPLICATION_COMMAND) {
     const { name } = data;
 
+        // Extract subcommand + args robustly across Discord payload shapes
+    function extractDwordle(data) {
+      // No options? default to start
+      if (!data?.options || data.options.length === 0) {
+        return { sub: 'start', args: {} };
+      }
+
+      const o0 = data.options[0];
+
+      // SUB_COMMAND
+      if (o0.type === 1) {
+        const args = Object.fromEntries((o0.options || []).map(o => [o.name, o.value]));
+        return { sub: o0.name, args };
+      }
+
+      // SUB_COMMAND_GROUP -> SUB_COMMAND
+      if (o0.type === 2) {
+        const o1 = o0.options?.[0];
+        if (o1?.type === 1) {
+          const args = Object.fromEntries((o1.options || []).map(o => [o.name, o.value]));
+          return { sub: o1.name, args, group: o0.name };
+        }
+      }
+
+      // Fallback: top-level options (no subcommands registered)
+      const wordOpt = data.options.find(o => o.name === 'word' && Object.prototype.hasOwnProperty.call(o, 'value'));
+      if (wordOpt) return { sub: 'guess', args: { word: wordOpt.value } };
+
+      return { sub: 'start', args: {} };
+    }
+
+
+    if (name === 'dwordle') {
+      const context = req.body.context;
+      const userId = context === 0 ? req.body.member.user.id : req.body.user.id;
+
+      // Extract sub + args safely
+      const { sub, args } = extractDwordle(data);
+
+      // Optional: log the raw payload once to confirm shape
+      // console.dir(data, { depth: null });
+
+      let response;
+      try {
+        if (sub === 'start') {
+          response = await startWordle(userId);
+        } else if (sub === 'guess') {
+          response = await guessWordle(userId, args.word);
+        } else if (sub === 'stats') {
+          response = await getStats(userId);
+        } else {
+          response = { content: 'Unknown subcommand. Use: start | guess | stats' };
+        }
+      } catch (e) {
+        console.error('dwordle error', e);
+        response = { content: 'There was an error handling your request.' };
+      }
+
+      return res.send({
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: {
+          flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+          components: [
+            { type: MessageComponentTypes.TEXT_DISPLAY, content: response.content }
+          ]
+        }
+      });
+    }
+
     // "test" command
     if (name === 'test') {
       // Send a message into the channel where command was triggered from
