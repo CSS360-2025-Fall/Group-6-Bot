@@ -66,12 +66,15 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
       // User ID is in user field for (G)DMs, and member for servers
       const userId = context === 0 ? req.body.member.user.id : req.body.user.id;
       // User's object choice
-      const objectName = req.body.data.options[0].value;
-
+      const options = req.body.data.options;
+      const objectName = options.find(opt => opt.name === 'object')?.value;
+      const wager = options.find(opt => opt.name === 'wager')?.value || 0;
+     
       // Create active game using message ID as the game ID
       activeGames[id] = {
         id: userId,
         objectName,
+	      wager,
       };
 
       return res.send({

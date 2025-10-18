@@ -38,6 +38,12 @@ const CHALLENGE_COMMAND = {
       required: true,
       choices: createCommandChoices(),
     },
+    {
+      type: 10,
+      name: 'wager',
+      description: 'How much do you want to gamble?',
+      required: false,
+    },
   ],
   type: 1,
   integration_types: [0, 1],
