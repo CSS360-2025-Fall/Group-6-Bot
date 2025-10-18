@@ -8,7 +8,7 @@ import {
   ButtonStyleTypes,
   verifyKeyMiddleware,
 } from 'discord-interactions';
-import { getRandomEmoji, DiscordRequest, getLeaderboard } from './utils.js';
+import { getRandomEmoji, DiscordRequest, getLeaderboard, updateLeaderboard } from './utils.js';
 import { getShuffledOptions, getResult } from './game.js';
 
 // Create an express app
@@ -101,26 +101,6 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
       });
     }
 
-    if (name === 'leaderboard') {
-      // Send a message into the channel where command was triggered from
-      return res.send({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-          flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-          components: [
-            {
-              type: MessageComponentTypes.TEXT_DISPLAY,
-              // Fetches top 5 leaderboard items sorted by points 
-              content: getLeaderboard('points', 5)
-            }
-          ]
-        },
-      });
-    }
-
-    console.error(`unknown command: ${name}`);
-    return res.status(400).json({ error: 'unknown command' });
-  }
 
   /**
    * Handle requests from interactive components
@@ -220,6 +200,77 @@ app.post('/interactions', verifyKeyMiddleware(process.env.PUBLIC_KEY), async fun
     }
     
     return;
+  }
+
+  // Display leaderboard command
+    if (name === 'leaderboard') {
+      // Send a message into the channel where command was triggered from
+      return res.send({
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: {
+          flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+          components: [
+            {
+              type: MessageComponentTypes.TEXT_DISPLAY,
+              // Fetches top 5 leaderboard items sorted by points 
+              content: getLeaderboard('points', 5)
+            }
+          ]
+        },
+      });
+    }
+
+    // Command to update the leaderboard manually
+    if (name === 'update_leaderboard') {
+      // Read and parse message for input parameters
+      const params = req.body.data.options || [];
+      let userId = null;
+      let pointsToAdd = 0;
+      let gamesPlayedToAdd = 0;
+
+      for (let param of params) {
+        if (param.name === 'user') {
+          userId = param.value;
+        } else if (param.name === 'points') {
+          pointsToAdd = param.value;
+        } else if (param.name === 'games_played') {
+          gamesPlayedToAdd = param.value;
+        }
+      }
+
+      // Update leaderboard data
+      if (gamesPlayedToAdd > 0) {
+        updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd);
+      } else {
+        updateLeaderboard(userId, pointsToAdd);
+      }
+
+      let messageContent = `Leaderboard updated for user ${userId}`;
+
+      if (userId === null) {
+        messageContent = 'Error: Please specify user';
+      } else if (pointsToAdd === 0) {
+        messageContent = 'Error: Please specify points amount';
+      }
+
+      // Send a message into the channel where command was triggered from
+      return res.send({
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: {
+          flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+          components: [
+            {
+              type: MessageComponentTypes.TEXT_DISPLAY,
+              // Confirmation or error message
+              content: messageContent
+            }
+          ]
+        },
+      });
+    }
+
+    console.error(`unknown command: ${name}`);
+    return res.status(400).json({ error: 'unknown command' });
   }
 
   console.error('unknown interaction type', type);

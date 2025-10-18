@@ -48,7 +48,7 @@ export function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// Load and parse the leaderboard data from JSON file
+// Load and parse the leaderboard data from JSON file to be displayed to users
 // Expects: key specifying which field to sort by, and n number of top entries to display
 export function getLeaderboard(key, n) {
   const rawData = fs.readFileSync('./data/leaderboard.json', 'utf-8');
@@ -75,4 +75,22 @@ export function getLeaderboard(key, n) {
 
   // Return completed leaderboard as string
   return result;
+}
+
+// Updated leaderboard data after a game. Will also create new entry if user not found
+// By default, adds 1 to games played
+export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 1) {
+  const rawData = fs.readFileSync('./data/leaderboard.json', 'utf-8');
+  const leaderboard = JSON.parse(rawData);
+
+  // Find user entry
+  let userEntry = leaderboard.find(entry => entry.user === userId);
+
+  // If not found, create new entry
+  if (!userEntry) {
+      userEntry = {user: userId, points: pointsToAdd, gamesPlayedToAdd: 0};
+      leaderboard.push(userEntry);
+  }
+
+  fs.writeFileSync('./data/leaderboard.json', JSON.stringify(leaderboard, null, 2));
 }

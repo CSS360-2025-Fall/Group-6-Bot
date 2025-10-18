@@ -47,12 +47,43 @@ const CHALLENGE_COMMAND = {
 // Command to display leaderboard
 const LEADERBOARD_COMMAND = {
   name: 'leaderboard',
-  description: 'Display leaderboard',
+  description: 'Displays leaderboard',
   type: 1,
   integration_types: [0, 1],
   contexts: [0, 1, 2]
 };
 
-const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND, LEADERBOARD_COMMAND];
+// Command to update the leaderboard
+const UPDATE_LEADERBOARD_COMMAND = {
+  name: 'update_leaderboard',
+  description: 'Used by games to update points and games played on the leaderboard',
+  options: [
+    {
+      type: 3,
+      name: 'user',
+      description: 'User to update',
+      required: true,
+    },
+    {
+      type: 4,
+      name: 'points',
+      description: 'Points update ammount',
+      required: true,
+    },
+    {
+      type: 4,
+      name: 'games',
+      description: 'Games played update ammount',
+      required: false,
+    },
+  ],
+  type: 1,
+  integration_types: [0, 1],
+  contexts: [0, 1, 2]
+};
+
+const ALL_COMMANDS = [TEST_COMMAND, CHALLENGE_COMMAND, LEADERBOARD_COMMAND,
+UPDATE_LEADERBOARD_COMMAND];
+
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
