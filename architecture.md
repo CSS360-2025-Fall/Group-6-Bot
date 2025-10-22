@@ -19,3 +19,11 @@ Below is a basic overview of the project structure:
 ├── README.md
 └── .gitignore
 ```
+## Functions of NGrok
+...
+Ngrok is a tool that creates a secure tunnel from a public URL to our local web server.
+
+What does this mean?
+This means that ngrok serves as a middle-man, it allows us to share the code for our Discord Application without the need of complex network configurations.
+
+...
