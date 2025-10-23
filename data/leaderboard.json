@@ -8,5 +8,10 @@
     "user": "Kaylea",
     "points": 150,
     "games_played": 3
+  },
+  {
+    "user": "a",
+    "points": 10,
+    "games_played": 1
   }
 ]
