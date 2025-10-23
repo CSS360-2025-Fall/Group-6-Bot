@@ -27,3 +27,7 @@ What does this mean?
 This means that ngrok serves as a middle-man, it allows us to share the code for our Discord Application without the need of complex network configurations.
 
 ...
+
+## System Diagram
+...
+[User] ---> [Discord Server] ---> [Discord API] ---> [Ngrok Tunnel] ---> [Local Host: 3000] ---> [Bot Logic] ---> [Response Back To Discord]
