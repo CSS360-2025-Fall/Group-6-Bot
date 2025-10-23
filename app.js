@@ -10,7 +10,7 @@ import {
 } from 'discord-interactions';
 import { getRandomEmoji, DiscordRequest, getLeaderboard, updateLeaderboard } from './utils.js';
 import { getShuffledOptions, getResult } from './game.js';
-
+import { startWordle } from './wordle.js';
 // Create an express app
 const app = express();
 // Get port, or default to 3000
