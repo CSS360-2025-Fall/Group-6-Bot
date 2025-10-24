@@ -4,12 +4,12 @@ Below is a basic overview of the project structure:
 ```
 ├── examples    -> short, feature-specific sample apps
 ├── images      -> holds images used by games
-├── .env.sample -> sample .env file
+├── .env        -> .env file for bot routing
 ├── app.js      -> main entrypoint for app
 ├── commands.js -> slash command payloads + helpers
-├── rps.js     -> logic specific to RPS
+├── rps.js      -> logic specific to RPS
 ├── utils.js    -> utility functions and enums
-├── wordle.js   -> logic specifically to wordle
+├── wordle.js   -> logic specific to wordle
 ├── package.json
 ├── README.md
 └── .gitignore
