@@ -51,7 +51,7 @@ This means that ngrok serves as a middle-man — it allows us to share the code 
 
 ---
 
-## Bot Code Architecture
+## Bot Code Design
 
 The bot follows a modular architecture that separates core logic, user interactions, and command routing into distinct files.  
 This design improves maintainability, scalability, and readability of the codebase.
@@ -88,8 +88,6 @@ This design improves maintainability, scalability, and readability of the codeba
   Updates to one game or feature do not affect others.
 - **Extensibility:**  
   New features (e.g., trivia or currency system) can be added as separate modules following the same structure.
-- **Testability:**  
-  Each module’s logic can be unit-tested independently without needing to start the Discord client.
 
 ---
 
