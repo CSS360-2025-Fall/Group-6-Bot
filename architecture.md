@@ -64,7 +64,7 @@ This design improves maintainability, scalability, and readability of the codeba
 
 - **commands.js**  
   Defines and registers all slash commands used by the bot (e.g., `/challenge`, `/wordle`, etc.).  
-  It maps each command to a corresponding logic module, ensuring a clean separation between command definition and game logic.
+  It maps each command to a corresponding logic module resulting in a clean separation between command definition and game logic.
 
 - **rps.js** and **wordle.js**  
   Implement the specific game logic for Rock-Paper-Scissors and Wordle, respectively.  
@@ -85,7 +85,7 @@ This design improves maintainability, scalability, and readability of the codeba
 ### 3. Key Design Benefits
 
 - **Maintainability:**  
-  Updates to one game or feature do not affect others.
+  Updates to games or feature do not affect others.
 - **Extensibility:**  
   New features (e.g., trivia or currency system) can be added as separate modules following the same structure.
 
