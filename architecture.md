@@ -93,12 +93,4 @@ This design improves maintainability, scalability, and readability of the codeba
 
 ---
 
-### Author Contributions
-
-- Ngrok documentation and system flow: Team members A & B  
-- Project structure outline: Team member C  
-- **Bot code architecture and module interaction analysis:** *[Your Name]*
-
----
-
 
