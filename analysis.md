@@ -22,3 +22,8 @@ The goal is to add a seperate file with all the possible, 5 letter words, displa
 
 The game logic itself works, but it lacks in a lot of ways, starting with actually working.
 </h3>
+
+## Leaderboard function too accessible
+There is a slash command allowing all users to edit leaderboard functions. While ok for testing a very early development bot, this is a dangerous method to employ on a bot that is active in servers because it allows all users acess to editing internal documents. This error disgards the usefulness of an official leaderboard.
+
+A possible remedy involves removing this command and instead using a script with unit tests to ensure the leaderboard implementation is working correctly.
