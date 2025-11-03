@@ -30,5 +30,7 @@ A possible remedy involves removing this command and instead using a script with
 
 ## User stories 
 As an admin, only members with an admin role can update the leaderboard; non-admins get a permission error, and successful updates are logged.
+
 As a developer, unreachable code and undefined variables are blocked before merge; a pre-commit lint step prevents bad commits and shows clear errors.
+
 As a player, the leaderboard updates only from actual matches, with no public manual edit; results are recorded automatically.
