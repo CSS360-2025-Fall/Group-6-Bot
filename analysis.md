@@ -27,10 +27,3 @@ The game logic itself works, but it lacks in a lot of ways, starting with actual
 There is a slash command allowing all users to edit leaderboard functions. While ok for testing a very early development bot, this is a dangerous method to employ on a bot that is active in servers because it allows all users acess to editing internal documents. This error disgards the usefulness of an official leaderboard.
 
 A possible remedy involves removing this command and instead using a script with unit tests to ensure the leaderboard implementation is working correctly.
-
-## User stories 
-As an admin, only members with an admin role can update the leaderboard; non-admins get a permission error, and successful updates are logged.
-
-As a developer, unreachable code and undefined variables are blocked before merge; a pre-commit lint step prevents bad commits and shows clear errors.
-
-As a player, the leaderboard updates only from actual matches, with no public manual edit; results are recorded automatically.
