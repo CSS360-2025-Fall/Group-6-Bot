@@ -29,5 +29,8 @@ There is a slash command allowing all users to edit leaderboard functions. While
 A possible remedy involves removing this command and instead using a script with unit tests to ensure the leaderboard implementation is working correctly.
 
 ## Missing Rate Limiting Protection
-Even if the leaderboard command issue was identified, the bot lacks any rate limiting mechanism across all commands. This allows abuse scenarios:
+Even if the leaderboard command issue was identified, the bot lacks any rate limiting mechanism across all commands. This allows the following abuse scenarios:
+
 Users can spam commands to overwhelm the bot or Discord API
+
+No protection against bot raids or coordinated spam attacks
