@@ -16,102 +16,55 @@ import {
 } from "./utils.js";
 import { getShuffledOptions, getResult } from "./rps.js";
 import { startWordle } from "./wordle.js";
-// Create an express app
+import { flipCoin } from "./cf.js"; // <-- coin flip logic
+
 const app = express();
-// Get port, or default to 3000
 const PORT = process.env.PORT || 3000;
 
-// Store for in-progress games. In production, you'd want to use a DB
+// Store for in-progress games
 const activeGames = {};
 
-/**
- * Interactions endpoint URL where Discord will send HTTP requests
- * Parse request body and verifies incoming requests using discord-interactions package
- */
 app.post(
   "/interactions",
   verifyKeyMiddleware(process.env.PUBLIC_KEY),
   async function (req, res) {
-    // Interaction type and data
     const { type, id, data } = req.body;
 
-    /**
-     * Handle verification requests
-     */
+    // PING check
     if (type === InteractionType.PING) {
       return res.send({ type: InteractionResponseType.PONG });
     }
 
-    /**
-     * Handle slash command requests
-     * See https://discord.com/developers/docs/interactions/application-commands#slash-commands
-     */
+    // Slash commands
     if (type === InteractionType.APPLICATION_COMMAND) {
       const { name } = data;
 
-      // Extract subcommand + args robustly across Discord payload shapes
-      function extractDwordle(data) {
-        // No options? default to start
-        if (!data?.options || data.options.length === 0) {
-          return { sub: "start", args: {} };
-        }
-
-        const o0 = data.options[0];
-
-        // SUB_COMMAND
-        if (o0.type === 1) {
-          const args = Object.fromEntries(
-            (o0.options || []).map((o) => [o.name, o.value]),
-          );
-          return { sub: o0.name, args };
-        }
-
-        // SUB_COMMAND_GROUP -> SUB_COMMAND
-        if (o0.type === 2) {
-          const o1 = o0.options?.[0];
-          if (o1?.type === 1) {
-            const args = Object.fromEntries(
-              (o1.options || []).map((o) => [o.name, o.value]),
-            );
-            return { sub: o1.name, args, group: o0.name };
-          }
-        }
-
-        // Fallback: top-level options (no subcommands registered)
-        const wordOpt = data.options.find(
-          (o) =>
-            o.name === "word" &&
-            Object.prototype.hasOwnProperty.call(o, "value"),
-        );
-        if (wordOpt) return { sub: "guess", args: { word: wordOpt.value } };
-
-        return { sub: "start", args: {} };
+      // --- Coinflip command ---
+      if (name === "coinflip") {
+        const result = flipCoin();
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+            components: [
+              {
+                type: MessageComponentTypes.TEXT_DISPLAY,
+                content: `🪙 The coin landed on **${result}**!`,
+              },
+            ],
+          },
+        });
       }
 
+      // --- Wordle command ---
       if (name === "dwordle") {
         const context = req.body.context;
         const userId =
           context === 0 ? req.body.member.user.id : req.body.user.id;
 
-        // Extract sub + args safely
-        const { sub, args } = extractDwordle(data);
-
-        // Optional: log the raw payload once to confirm shape
-        // console.dir(data, { depth: null });
-
         let response;
         try {
-          if (sub === "start") {
-            response = await startWordle(userId);
-          } else if (sub === "guess") {
-            response = await guessWordle(userId, args.word);
-          } else if (sub === "stats") {
-            response = await getStats(userId);
-          } else {
-            response = {
-              content: "Unknown subcommand. Use: start | guess | stats",
-            };
-          }
+          response = await startWordle(userId);
         } catch (e) {
           console.error("dwordle error", e);
           response = { content: "There was an error handling your request." };
@@ -122,18 +75,14 @@ app.post(
           data: {
             flags: InteractionResponseFlags.IS_COMPONENTS_V2,
             components: [
-              {
-                type: MessageComponentTypes.TEXT_DISPLAY,
-                content: response.content,
-              },
+              { type: MessageComponentTypes.TEXT_DISPLAY, content: response.content },
             ],
           },
         });
       }
 
-      // "test" command
+      // --- Test command ---
       if (name === "test") {
-        // Send a message into the channel where command was triggered from
         return res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
@@ -141,7 +90,6 @@ app.post(
             components: [
               {
                 type: MessageComponentTypes.TEXT_DISPLAY,
-                // Fetches a random emoji to send from a helper function
                 content: `hello world ${getRandomEmoji()}`,
               },
             ],
@@ -149,24 +97,16 @@ app.post(
         });
       }
 
-      // "challenge" command
+      // --- Challenge command ---
       if (name === "challenge" && id) {
-        // Interaction context
         const context = req.body.context;
-        // User ID is in user field for (G)DMs, and member for servers
         const userId =
           context === 0 ? req.body.member.user.id : req.body.user.id;
-        // User's object choice
         const options = req.body.data.options;
         const objectName = options.find((opt) => opt.name === "object")?.value;
         const wager = options.find((opt) => opt.name === "wager")?.value || 0;
 
-        // Create active game using message ID as the game ID
-        activeGames[id] = {
-          id: userId,
-          objectName,
-          wager,
-        };
+        activeGames[id] = { id: userId, objectName, wager };
 
         return res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -175,15 +115,13 @@ app.post(
             components: [
               {
                 type: MessageComponentTypes.TEXT_DISPLAY,
-                // Fetches a random emoji to send from a helper function
-                content: `Rock papers scissors challenge from <@${userId}>`,
+                content: `Rock paper scissors challenge from <@${userId}>`,
               },
               {
                 type: MessageComponentTypes.ACTION_ROW,
                 components: [
                   {
                     type: MessageComponentTypes.BUTTON,
-                    // Append the game ID to use later on
                     custom_id: `accept_button_${req.body.id}`,
                     label: "Accept",
                     style: ButtonStyleTypes.PRIMARY,
@@ -194,214 +132,89 @@ app.post(
           },
         });
       }
-    }
 
-    /**
-     * Handle requests from interactive components
-     * See https://discord.com/developers/docs/components/using-message-components#using-message-components-with-interactions
-     */
-    if (type === InteractionType.MESSAGE_COMPONENT) {
-      // custom_id set in payload when sending message component
-      const componentId = data.custom_id;
+      // --- Leaderboard command ---
+      if (name === "leaderboard") {
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+            components: [
+              {
+                type: MessageComponentTypes.TEXT_DISPLAY,
+                content: getLeaderboard("points", 5),
+              },
+            ],
+          },
+        });
+      }
 
-      if (componentId.startsWith("accept_button_")) {
-        // get the associated game ID
-        const gameId = componentId.replace("accept_button_", "");
-        // Delete message with token in request body
-        const endpoint = `webhooks/${process.env.APP_ID}/${req.body.token}/messages/${req.body.message.id}`;
-        try {
-          await res.send({
+      // --- Update leaderboard command ---
+      if (name === "update_leaderboard") {
+        const params = req.body.data.options || [];
+        let userId = null;
+        let pointsToAdd = null;
+        let gamesPlayedToAdd = null;
+
+        for (let param of params) {
+          if (param.name === "user") userId = param.value;
+          else if (param.name === "points") pointsToAdd = param.value;
+          else if (param.name === "games") gamesPlayedToAdd = param.value;
+        }
+
+        if (!userId || !pointsToAdd) {
+          return res.send({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
             data: {
-              // Indicates it'll be an ephemeral message
-              flags:
-                InteractionResponseFlags.EPHEMERAL |
-                InteractionResponseFlags.IS_COMPONENTS_V2,
+              flags: InteractionResponseFlags.IS_COMPONENTS_V2,
               components: [
                 {
                   type: MessageComponentTypes.TEXT_DISPLAY,
-                  content: "What is your object of choice?",
-                },
-                {
-                  type: MessageComponentTypes.ACTION_ROW,
-                  components: [
-                    {
-                      type: MessageComponentTypes.STRING_SELECT,
-                      // Append game ID
-                      custom_id: `select_choice_${gameId}`,
-                      options: getShuffledOptions(),
-                    },
-                  ],
+                  content: "Error: Please specify user and points",
                 },
               ],
             },
           });
-          // Delete previous message
-          await DiscordRequest(endpoint, { method: "DELETE" });
-        } catch (err) {
-          console.error("Error sending message:", err);
         }
-      } else if (componentId.startsWith("select_choice_")) {
-        // get the associated game ID
-        const gameId = componentId.replace("select_choice_", "");
 
-        if (activeGames[gameId]) {
-          // Interaction context
-          const context = req.body.context;
-          // Get user ID and object choice for responding user
-          // User ID is in user field for (G)DMs, and member for servers
-          const userId =
-            context === 0 ? req.body.member.user.id : req.body.user.id;
-          const objectName = data.values[0];
-          // Calculate result from helper function
-          const resultStr = getResult(activeGames[gameId], {
-            id: userId,
-            objectName,
-          });
+        if (gamesPlayedToAdd !== null) {
+          updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd);
+        } else {
+          updateLeaderboard(userId, pointsToAdd);
+        }
 
-          // Remove game from storage
-          delete activeGames[gameId];
-          // Update message with token in request body
-          const endpoint = `webhooks/${process.env.APP_ID}/${req.body.token}/messages/${req.body.message.id}`;
-
-          try {
-            // Send results
-            await res.send({
-              type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-              data: {
-                flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-                components: [
-                  {
-                    type: MessageComponentTypes.TEXT_DISPLAY,
-                    content: resultStr,
-                  },
-                ],
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+            components: [
+              {
+                type: MessageComponentTypes.TEXT_DISPLAY,
+                content: `Leaderboard updated for ${userId}`,
               },
-            });
-            // Update ephemeral message
-            await DiscordRequest(endpoint, {
-              method: "PATCH",
-              body: {
-                components: [
-                  {
-                    type: MessageComponentTypes.TEXT_DISPLAY,
-                    content: "Nice choice " + getRandomEmoji(),
-                  },
-                ],
-              },
-            });
-          } catch (err) {
-            console.error("Error sending message:", err);
-          }
-        }
+            ],
+          },
+        });
       }
 
-      return;
-    }
-
-    // Display leaderboard command
-    if (name === "leaderboard") {
-      // Send a message into the channel where command was triggered from
-      return res.send({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-          flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-          components: [
-            {
-              type: MessageComponentTypes.TEXT_DISPLAY,
-              // Fetches top 5 leaderboard items sorted by points
-              content: getLeaderboard("points", 5),
-            },
-          ],
-        },
-      });
-    }
-
-    // Command to update the leaderboard manually
-    if (name === "update_leaderboard") {
-      // Read and parse message for input parameters
-      const params = req.body.data.options || [];
-      let userId = null;
-      let pointsToAdd = null;
-      let gamesPlayedToAdd = null;
-
-      for (let param of params) {
-        if (param.name === "user") {
-          userId = param.value;
-        } else if (param.name === "points") {
-          pointsToAdd = param.value;
-        } else if (param.name === "games") {
-          gamesPlayedToAdd = param.value;
-        }
+      // --- Help command ---
+      if (name === "help") {
+        const banner =
+          "🎮 Game Rules & Point System\n\nPlay games to earn points and compete with friends!";
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+            components: [
+              { type: MessageComponentTypes.TEXT_DISPLAY, content: banner },
+            ],
+          },
+        });
       }
 
-      let messageContent = `Leaderboard updated for ${userId}`;
-
-      if (userId === null) {
-        messageContent = "Error: Please specify user";
-        return;
-      } else if (pointsToAdd === null) {
-        messageContent = "Error: Please specify points amount";
-        return;
-      }
-
-      // Update leaderboard data
-      if (gamesPlayedToAdd !== null) {
-        updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd);
-      } else {
-        updateLeaderboard(userId, pointsToAdd);
-      }
-
-      // Send a message into the channel where command was triggered from
-      return res.send({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-          flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-          components: [
-            {
-              type: MessageComponentTypes.TEXT_DISPLAY,
-              // Confirmation or error message
-              content: messageContent,
-            },
-          ],
-        },
-      });
+      console.error(`unknown command: ${name}`);
+      return res.status(400).json({ error: "unknown command" });
     }
-
-    // "help" command
-    if (name === "help") {
-      const banner =
-        "🎮 Game Rules & Point System\n\nWith this bot you will be able to play games to earn points and compete with your friends!";
-      const games =
-        "📊 Available Games\n• Wordle - Daily word puzzle\n• Chess - Strategic board game\n• Rock Paper Scissors - Quick matches\n• More games coming soon!";
-      const points =
-        "🏆 Point System\nDifferent games award different point amounts:\n• Winning games: Earn points based on game difficulty\n• Losing games: Lose points when defeated by other players\n• Daily bonuses: Extra points for consistent play";
-      const leaderboard =
-        "📈 Leaderboard\nUse `/leaderboard` to check your standings and compete with friends!";
-      const rewards =
-        "🎁 Rewards\nEarn enough points to unlock exclusive rewards:\n• Custom Emotes - Show off your achievements\n• Special Roles - Unique roles in the server\n• Badges - Display your gaming prowess\n• More rewards as you level up!";
-      const start =
-        "⚡ Getting Started\nUse `/challenge` to start a Rock Paper Scissors match!\n\nHappy gaming! 🎯";
-
-      return res.send({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-          // Components V2 is required to use Text Display components
-          flags: InteractionResponseFlags.IS_COMPONENTS_V2, // opt-in to display components [web:11][web:2][web:20]
-          components: [
-            { type: MessageComponentTypes.TEXT_DISPLAY, content: banner }, // text display component [web:5][web:2]
-            { type: MessageComponentTypes.TEXT_DISPLAY, content: games }, // text display component [web:5][web:2]
-            { type: MessageComponentTypes.TEXT_DISPLAY, content: points }, // text display component [web:5][web:2]
-            { type: MessageComponentTypes.TEXT_DISPLAY, content: leaderboard }, // text display component [web:5][web:2]
-            { type: MessageComponentTypes.TEXT_DISPLAY, content: rewards }, // text display component [web:5][web:2]
-            { type: MessageComponentTypes.TEXT_DISPLAY, content: start }, // text display component [web:5][web:2]
-          ],
-        },
-      });
-    }
-
-    console.error(`unknown command: ${name}`);
-    return res.status(400).json({ error: "unknown command" });
 
     console.error("unknown interaction type", type);
     return res.status(400).json({ error: "unknown interaction type" });
@@ -411,3 +224,4 @@ app.post(
 app.listen(PORT, () => {
   console.log("Listening on port", PORT);
 });
+
