@@ -1,6 +1,7 @@
 import "dotenv";
-import { getRPSChoices } from "./game.js";
+import { getRPSChoices } from "./rps.js";
 import { capitalize, InstallGlobalCommands } from "./utils.js";
+import { flipCoin } from "./cf.js";
 
 // Get the game choices from game.js
 function createCommandChoices() {
@@ -106,6 +107,14 @@ const HELP_COMMAND = {
   contexts: [0, 1, 2], // guild, bot DM, private channel [web:15]
 };
 
+const COINFLIP_COMMAND = {
+  name: "coinflip",
+  description: "Flip a coin for heads or tails",
+  type: 1,
+  integration_types: [0, 1],
+  contexts: [0, 1, 2],
+};
+
 const ALL_COMMANDS = [
   TEST_COMMAND,
   CHALLENGE_COMMAND,
@@ -113,6 +122,7 @@ const ALL_COMMANDS = [
   UPDATE_LEADERBOARD_COMMAND,
   WORDLE_COMMAND,
   HELP_COMMAND,
+  COINFLIP_COMMAND,
 ];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
