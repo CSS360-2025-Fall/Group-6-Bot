@@ -1,3 +1,4 @@
+import "./music.js";
 import "dotenv/config";
 import express from "express";
 import {
