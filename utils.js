@@ -85,7 +85,15 @@ export function getLeaderboard(key, n) {
 // Updated leaderboard data after a game. Will also create new entry if user not found
 // By default, adds 1 to games played
 export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 1) {
-  const rawData = fs.readFileSync('./data/leaderboard.json', 'utf-8');
+    const leaderboardFile = './data/leaderboard.json';
+
+  // Ensure the leaderboard file exists
+  if (!fs.existsSync(leaderboardFile)) {
+    // If not, create an empty leaderboard
+    fs.writeFileSync(leaderboardFile, JSON.stringify([], null, 2), 'utf8');
+  }
+
+  const rawData = fs.readFileSync(leaderboardFile, 'utf-8');
   const leaderboard = JSON.parse(rawData);
 
   // Find user entry
