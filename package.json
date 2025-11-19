@@ -16,9 +16,12 @@
   "author": "Shay DeWael",
   "license": "MIT",
   "dependencies": {
+    "@discordjs/voice": "^0.19.0",
     "discord-interactions": "^4.0.0",
+    "distube": "^5.0.7",
     "dotenv": "^16.6.1",
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
