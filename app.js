@@ -16,7 +16,8 @@ import {
 } from "./utils.js";
 import { getShuffledOptions, getResult } from "./rps.js";
 import { startWordle } from "./wordle.js";
-import { flipCoin } from "./cf.js"; // <-- coin flip logic
+import { flipCoin } from "./cf.js"; 
+import fs from "fs";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -196,6 +197,46 @@ app.post(
           },
         });
       }
+     // --- Info command ---
+if (name === "info") {
+  try {
+    const readmeContent = fs.readFileSync("./README.md", "utf8");
+
+    // Discord messages have a 2000 character limit
+    const message =
+      readmeContent.length > 2000
+        ? readmeContent.substring(0, 2000)
+        : readmeContent;
+
+    return res.send({
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: {
+        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+        components: [
+          {
+            type: MessageComponentTypes.TEXT_DISPLAY,
+            content: message,
+          },
+        ],
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    return res.send({
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: {
+        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+        components: [
+          {
+            type: MessageComponentTypes.TEXT_DISPLAY,
+            content: "Could not read README.md file.",
+          },
+        ],
+      },
+    });
+  }
+}
+
 
       // --- Help command ---
       if (name === "help") {
