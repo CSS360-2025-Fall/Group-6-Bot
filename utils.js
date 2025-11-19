@@ -85,7 +85,15 @@ export function getLeaderboard(key, n) {
 // Updated leaderboard data after a game. Will also create new entry if user not found
 // By default, adds 1 to games played
 export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 1) {
-  const rawData = fs.readFileSync('./data/leaderboard.json', 'utf-8');
+    const leaderboardFile = './data/leaderboard.json';
+
+  // Ensure the leaderboard file exists
+  if (!fs.existsSync(leaderboardFile)) {
+    // If not, create an empty leaderboard
+    fs.writeFileSync(leaderboardFile, JSON.stringify([], null, 2), 'utf8');
+  }
+
+  const rawData = fs.readFileSync(leaderboardFile, 'utf-8');
   const leaderboard = JSON.parse(rawData);
 
   // Find user entry
@@ -103,4 +111,22 @@ export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 1) {
 
   // Write updated leaderboard back to file
   fs.writeFileSync('./data/leaderboard.json', JSON.stringify(leaderboard, null, 2));
+}
+
+// Checks leaderboard data for specific user and field
+// If not field specified, will return user's points
+export function checkLeaderboard(userId, key = points) {
+  const leaderboardFile = path.join(__dirname, 'data', 'leaderboard.json');
+  const leaderboard = JSON.parse(rawData);
+
+  // Find user entry
+  const userEntry = leaderboard.find(entry => entry.user === userId);
+
+  // If not found, return null
+  if (!userEntry) {
+    return null;
+  } else {
+    // If found return requested key value
+    return userEntry[key];
+  }
 }
