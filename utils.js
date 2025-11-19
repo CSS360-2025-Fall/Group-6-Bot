@@ -104,3 +104,21 @@ export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 1) {
   // Write updated leaderboard back to file
   fs.writeFileSync('./data/leaderboard.json', JSON.stringify(leaderboard, null, 2));
 }
+
+// Checks leaderboard data for specific user and field
+// If not field specified, will return user's points
+export function checkLeaderboard(userId, key = points) {
+  const leaderboardFile = path.join(__dirname, 'data', 'leaderboard.json');
+  const leaderboard = JSON.parse(rawData);
+
+  // Find user entry
+  const userEntry = leaderboard.find(entry => entry.user === userId);
+
+  // If not found, return null
+  if (!userEntry) {
+    return null;
+  } else {
+    // If found return requested key value
+    return userEntry[key];
+  }
+}
