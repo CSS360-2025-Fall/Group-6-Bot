@@ -15,7 +15,7 @@ import {
   updateLeaderboard,
 } from "./utils.js";
 import { getShuffledOptions, getResult } from "./rps.js";
-import { startWordle } from "./wordle.js";
+import { get_word_of_day } from "./newwordle.js";
 import { flipCoin } from "./cf.js"; // <-- coin flip logic
 
 const app = express();
@@ -57,25 +57,38 @@ app.post(
       }
 
       // --- Wordle command ---
-      if (name === "dwordle") {
-        const context = req.body.context;
-        const userId =
-          context === 0 ? req.body.member.user.id : req.body.user.id;
+      if (name === "wordler") {
+        const subcommand = req.body.data.options?.[0]?.name;
 
-        let response;
-        try {
-          response = await startWordle(userId);
-        } catch (e) {
-          console.error("dwordle error", e);
-          response = { content: "There was an error handling your request." };
+        if (subcommand === "guess") {
+          const guess = req.body.data.options[0].options[0].value;
+          const answer = get_word_of_day();
+
+          let response;
+          if (guess.toLowerCase() === answer.toLowerCase()) {
+            response = `✅ Correct! The word was "${answer}".`;
+          } else {
+            response = `❌ "${guess}" is not the word of the day. Try again!`;
+          }
+
+          return res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content: response,
+            },
+          });
         }
 
+        // Default behavior (show word of the day)
         return res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
             flags: InteractionResponseFlags.IS_COMPONENTS_V2,
             components: [
-              { type: MessageComponentTypes.TEXT_DISPLAY, content: response.content },
+              {
+                type: MessageComponentTypes.TEXT_DISPLAY,
+                content: `The word today is "${get_word_of_day()}"`,
+              },
             ],
           },
         });

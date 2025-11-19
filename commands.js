@@ -91,11 +91,26 @@ const UPDATE_LEADERBOARD_COMMAND = {
 };
 
 const WORDLE_COMMAND = {
-  name: "dwordle",
-  description: "Start a game of Wordle",
+  name: "wordler",
+  description: "Play Wordler",
   type: 1,
+  options: [
+    {
+      type: 1,
+      name: "guess",
+      description: "Guess Today's Word!",
+      options: [
+        {
+          type: 3,
+          name: "word",
+          description: "Your guess",
+          required: true,
+        }
+      ]
+    }
+  ],
   integration_types: [0, 1],
-  contexts: [0, 2],
+  contexts: [0, 1, 2],
 };
 
 // Help / About command with display-components contexts
