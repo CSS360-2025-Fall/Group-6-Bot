@@ -2,6 +2,7 @@ import "dotenv";
 import { getRPSChoices } from "./rps.js";
 import { capitalize, InstallGlobalCommands } from "./utils.js";
 import { flipCoin } from "./cf.js";
+import fs from "fs"; 
 
 // Get the game choices from game.js
 function createCommandChoices() {
@@ -75,13 +76,13 @@ const UPDATE_LEADERBOARD_COMMAND = {
     {
       type: 4,
       name: "points",
-      description: "Points update ammount",
+      description: "Points update amount",
       required: true,
     },
     {
       type: 4,
       name: "games",
-      description: "Games played update ammount",
+      description: "Games played update amount",
       required: false,
     },
   ],
@@ -98,18 +99,26 @@ const WORDLE_COMMAND = {
   contexts: [0, 2],
 };
 
-// Help / About command with display-components contexts
+// Help / About command
 const HELP_COMMAND = {
   name: "help",
   description: "Show game rules, points, rewards, and commands",
   type: 1,
-  integration_types: [0, 1], // guild + user install [web:15]
-  contexts: [0, 1, 2], // guild, bot DM, private channel [web:15]
+  integration_types: [0, 1],
+  contexts: [0, 1, 2],
 };
 
 const COINFLIP_COMMAND = {
   name: "coinflip",
   description: "Flip a coin for heads or tails",
+  type: 1,
+  integration_types: [0, 1],
+  contexts: [0, 1, 2],
+};
+
+const INFO_COMMAND = {
+  name: "info",
+  description: "Displays information from README.md",
   type: 1,
   integration_types: [0, 1],
   contexts: [0, 1, 2],
@@ -123,6 +132,8 @@ const ALL_COMMANDS = [
   WORDLE_COMMAND,
   HELP_COMMAND,
   COINFLIP_COMMAND,
+  INFO_COMMAND,
 ];
 
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
+
