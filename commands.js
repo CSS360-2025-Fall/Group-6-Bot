@@ -1,7 +1,8 @@
 import "dotenv";
 import { getRPSChoices } from "./rps.js";
 import { capitalize, InstallGlobalCommands } from "./utils.js";
-import { flipCoin } from "./cf.js";
+import { cfCommand } from "./cf.js";   // <-- your coinflip command object
+
 import fs from "fs"; 
 
 // Get the game choices from game.js
@@ -30,7 +31,7 @@ const TEST_COMMAND = {
 
 // Command containing options
 const CHALLENGE_COMMAND = {
-  name: "challenge",
+  name: "rps",
   description: "Challenge to a match of rock paper scissors",
   options: [
     {
@@ -52,7 +53,6 @@ const CHALLENGE_COMMAND = {
   contexts: [0, 2],
 };
 
-// Command to display leaderboard
 const LEADERBOARD_COMMAND = {
   name: "leaderboard",
   description: "Displays leaderboard",
@@ -61,7 +61,6 @@ const LEADERBOARD_COMMAND = {
   contexts: [0, 1, 2],
 };
 
-// Command to update the leaderboard
 const UPDATE_LEADERBOARD_COMMAND = {
   name: "update_leaderboard",
   description:
@@ -99,18 +98,9 @@ const WORDLE_COMMAND = {
   contexts: [0, 2],
 };
 
-// Help / About command
 const HELP_COMMAND = {
   name: "help",
   description: "Show game rules, points, rewards, and commands",
-  type: 1,
-  integration_types: [0, 1],
-  contexts: [0, 1, 2],
-};
-
-const COINFLIP_COMMAND = {
-  name: "coinflip",
-  description: "Flip a coin for heads or tails",
   type: 1,
   integration_types: [0, 1],
   contexts: [0, 1, 2],
@@ -131,9 +121,10 @@ const ALL_COMMANDS = [
   UPDATE_LEADERBOARD_COMMAND,
   WORDLE_COMMAND,
   HELP_COMMAND,
-  COINFLIP_COMMAND,
   INFO_COMMAND,
+  cfCommand.data.toJSON(),  
 ];
 
+// Register globally
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
 

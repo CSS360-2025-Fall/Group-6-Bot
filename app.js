@@ -16,7 +16,8 @@ import {
 } from "./utils.js";
 import { getShuffledOptions, getResult } from "./rps.js";
 import { startWordle } from "./wordle.js";
-import { flipCoin } from "./cf.js"; 
+import { cfCommand } from "./cf.js";
+
 import fs from "fs";
 
 const app = express();
@@ -41,21 +42,62 @@ app.post(
       const { name } = data;
 
       // --- Coinflip command ---
-      if (name === "coinflip") {
-        const result = flipCoin();
-        return res.send({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-            components: [
-              {
-                type: MessageComponentTypes.TEXT_DISPLAY,
-                content: `🪙 The coin landed on **${result}**!`,
-              },
-            ],
+if (name === "coinflip") {
+  try {
+    // Call cfCommand.execute with a fake interaction-like object
+    // Since express/discord-interactions doesn’t give you a Discord.js Interaction,
+    // we simulate the reply by capturing the string.
+    const chosenSide = data.options?.find(opt => opt.name === "side")?.value;
+    const wager = data.options?.find(opt => opt.name === "wager")?.value;
+
+    // Use cfCommand logic directly
+
+const randomFlip = Math.random() < 0.5 ? "heads" : "tails";
+const result = randomFlip;
+
+let response = `🪙 The coin landed on **${result}**!`;
+
+if (wager) {
+  response += `\n💰 Wager: **${wager}**`;
+}
+
+if (chosenSide) {
+  if (chosenSide === result) {
+    response += `\n✅ You guessed correctly!`;
+  } else {
+    response += `\n❌ You guessed ${chosenSide}, but it landed on ${result}.`;
+  }
+}
+
+    return res.send({
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: {
+        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+        components: [
+          {
+            type: MessageComponentTypes.TEXT_DISPLAY,
+            content: response,
           },
-        });
-      }
+        ],
+      },
+    });
+  } catch (err) {
+    console.error("coinflip error", err);
+    return res.send({
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: {
+        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+        components: [
+          {
+            type: MessageComponentTypes.TEXT_DISPLAY,
+            content: "There was an error handling your coinflip request.",
+          },
+        ],
+      },
+    });
+  }
+}
+
 
       // --- Wordle command ---
       if (name === "dwordle") {
@@ -99,7 +141,7 @@ app.post(
       }
 
       // --- Challenge command ---
-      if (name === "challenge" && id) {
+      if (name === "rps" && id) {
         const context = req.body.context;
         const userId =
           context === 0 ? req.body.member.user.id : req.body.user.id;
