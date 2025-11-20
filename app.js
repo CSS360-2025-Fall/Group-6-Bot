@@ -16,7 +16,7 @@ import {
   updateLeaderboard,
 } from "./utils.js";
 import { getShuffledOptions, getResult } from "./rps.js";
-import { get_date, get_word_of_day, write_JSON_object } from "./newwordle.js";
+import { does_user_exist, get_answer, get_date, get_list_of_guesses, get_word_of_day, validate_guess, write_JSON_object } from "./wordler.js";
 import { cfCommand } from "./cf.js";
 import fs from "fs";
 
@@ -109,26 +109,28 @@ app.post(
         const guesses = [];
 
         if (subcommand === "guess") {
-          const guess = req.body.data.options[0].options[0].value;
-          const answer = get_word_of_day();
+          const guess = req.body.data.options[0].options[0].value.toLowerCase();
           const todays_date = get_date();
-
-          //if (!does_user_exist(userId)) {
+          guesses.push(guess);
           write_JSON_object(userId, guesses, todays_date);
-          //}
-          //var check = check_guess(guess, userId);
-          let response;/// = check;
+
+          let check = validate_guess(guess, userId);
+          let response_string = check;
+          let response_template;
+          const answer = get_answer(userId);
 
           if (guess.toLowerCase() === answer.toLowerCase()) {
-            response += `✅ Correct! The word was "${answer}".`;
+            response_template += `${response_string}
+            ✅ Correct! The word was "${answer}".`;
           } else {
-            response += `<@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
+            response_template += `${response_string}
+            <@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
           }
 
           return res.send({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
             data: {
-              content: response,
+              content: response_template,
             },
           });
         }
