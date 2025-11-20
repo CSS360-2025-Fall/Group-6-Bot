@@ -1,3 +1,4 @@
+
 // Command: !play <song name or YouTube link> 
 import { DisTube } from "distube";
 import { Client, GatewayIntentBits } from "discord.js";
@@ -16,8 +17,8 @@ const client = new Client({
 // Initialize DisTube for music functionality
 const distube = new DisTube(client, {
   emitNewSongOnly: true,
-  leaveOnEmpty: true,
-  youtubeDL: false, // No need for YouTube-dl
+  //leaveOnEmpty: true,
+  //youtubeDL: false, // No need for YouTube-dl
   plugins: [],
 });
 

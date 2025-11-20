@@ -64,7 +64,7 @@ const LEADERBOARD_COMMAND = {
 const UPDATE_LEADERBOARD_COMMAND = {
   name: "update_leaderboard",
   description:
-    "Used by games to update points and games played on the leaderboard",
+    "Test command for updating leaderboard without game",
   options: [
     {
       type: 3,
@@ -91,26 +91,11 @@ const UPDATE_LEADERBOARD_COMMAND = {
 };
 
 const WORDLE_COMMAND = {
-  name: "wordler",
-  description: "Play Wordler",
+  name: "dwordle",
+  description: "Start a game of Wordle",
   type: 1,
-  options: [
-    {
-      type: 1,
-      name: "guess",
-      description: "Guess Today's Word!",
-      options: [
-        {
-          type: 3,
-          name: "word",
-          description: "Your guess",
-          required: true,
-        }
-      ]
-    }
-  ],
   integration_types: [0, 1],
-  contexts: [0, 1, 2],
+  contexts: [0, 2],
 };
 
 const HELP_COMMAND = {

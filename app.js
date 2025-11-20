@@ -1,4 +1,4 @@
-//import "./music.js";
+import "./music.js";
 import "dotenv/config";
 import express from "express";
 import {
@@ -18,8 +18,9 @@ import {
 import { getShuffledOptions, getResult } from "./rps.js";
 import { does_user_exist, get_answer, get_date, get_list_of_guesses, get_word_of_day, validate_guess, write_JSON_object } from "./wordler.js";
 import { cfCommand } from "./cf.js";
-import fs from "fs";
 
+//import { flipCoin } from "./cf.js";
+import fs from "fs";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,70 +44,68 @@ app.post(
       const { name } = data;
 
       // --- Coinflip command ---
-      if (name === "coinflip") {
-        try {
-          // Call cfCommand.execute with a fake interaction-like object
-          // Since express/discord-interactions doesn’t give you a Discord.js Interaction,
-          // we simulate the reply by capturing the string.
-          const chosenSide = data.options?.find(opt => opt.name === "side")?.value;
-          const wager = data.options?.find(opt => opt.name === "wager")?.value;
+if (name === "coinflip") {
+  try {
+    // Call cfCommand.execute with a fake interaction-like object
+    // Since express/discord-interactions doesn’t give you a Discord.js Interaction,
+    // we simulate the reply by capturing the string.
+    const chosenSide = data.options?.find(opt => opt.name === "side")?.value;
+    const wager = data.options?.find(opt => opt.name === "wager")?.value;
 
-          // Use cfCommand logic directly
+    // Use cfCommand logic directly
 
-          const randomFlip = Math.random() < 0.5 ? "heads" : "tails";
-          const result = randomFlip;
+const randomFlip = Math.random() < 0.5 ? "heads" : "tails";
+const result = randomFlip;
 
-          let response = `🪙 The coin landed on **${result}**!`;
+let response = `🪙 The coin landed on **${result}**!`;
 
-          if (wager) {
-            response += `\n💰 Wager: **${wager}**`;
-          }
+if (wager) {
+  response += `\n💰 Wager: **${wager}**`;
+}
 
-          if (chosenSide) {
-            if (chosenSide === result) {
-              response += `\n✅ You guessed correctly!`;
-            } else {
-              response += `\n❌ You guessed ${chosenSide}, but it landed on ${result}.`;
-            }
-          }
+if (chosenSide) {
+  if (chosenSide === result) {
+    response += `\n✅ You guessed correctly!`;
+  } else {
+    response += `\n❌ You guessed ${chosenSide}, but it landed on ${result}.`;
+  }
+}
 
-          return res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-              components: [
-                {
-                  type: MessageComponentTypes.TEXT_DISPLAY,
-                  content: response,
-                },
-              ],
-            },
-          });
-        } catch (err) {
-          console.error("coinflip error", err);
-          return res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-              components: [
-                {
-                  type: MessageComponentTypes.TEXT_DISPLAY,
-                  content: "There was an error handling your coinflip request.",
-                },
-              ],
-            },
-          });
-        }
-      }
+    return res.send({
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: {
+        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+        components: [
+          {
+            type: MessageComponentTypes.TEXT_DISPLAY,
+            content: response,
+          },
+        ],
+      },
+    });
+  } catch (err) {
+    console.error("coinflip error", err);
+    return res.send({
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: {
+        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+        components: [
+          {
+            type: MessageComponentTypes.TEXT_DISPLAY,
+            content: "There was an error handling your coinflip request.",
+          },
+        ],
+      },
+    });
+  }
+}
 
 
       // --- Wordle command ---
-      if (name === "wordler") {
-        const subcommand = req.body.data.options?.[0]?.name;
+      if (name === "dwordle") {
         const context = req.body.context;
         const userId =
           context === 0 ? req.body.member.user.id : req.body.user.id;
-        const guesses = [];
 
         if (subcommand === "guess") {
           const guess = req.body.data.options[0].options[0].value.toLowerCase();
@@ -135,7 +134,6 @@ app.post(
           });
         }
 
-        // Default behavior (show word of the day)
         return res.send({
           type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
           data: {
@@ -143,7 +141,7 @@ app.post(
             components: [
               {
                 type: MessageComponentTypes.TEXT_DISPLAY,
-                content: `The word today is "${get_word_of_day()}"`,
+                content: response.content,
               },
             ],
           },
@@ -221,13 +219,13 @@ app.post(
       // --- Update leaderboard command ---
       if (name === "update_leaderboard") {
         const params = req.body.data.options || [];
-        let userId = null;
+        let userId = interaction.user.id;;
         let pointsToAdd = null;
         let gamesPlayedToAdd = null;
 
         for (let param of params) {
-          if (param.name === "user") userId = param.value;
-          else if (param.name === "points") pointsToAdd = param.value;
+          /*if (param.name === "user") /*userId = param.value;
+          else*/ if (param.name === "points") pointsToAdd = param.value;
           else if (param.name === "games") gamesPlayedToAdd = param.value;
         }
 
