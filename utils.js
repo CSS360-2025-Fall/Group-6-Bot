@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { updateRoles } from "./roles.js";
 import fs from 'fs';
 
 export async function DiscordRequest(endpoint, options) {
