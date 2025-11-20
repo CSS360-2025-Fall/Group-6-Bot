@@ -51,6 +51,8 @@ export function capitalize(str) {
 // Load and parse the leaderboard data from JSON file to be displayed to users
 // Expects: key specifying which field to sort by, and n number of top entries to display
 export function getLeaderboard(key, n) {
+  
+
   const rawData = fs.readFileSync('./data/leaderboard.json', 'utf-8');
   const leaderboard = JSON.parse(rawData);
 
@@ -83,17 +85,15 @@ export function getLeaderboard(key, n) {
 }
 
 // Updated leaderboard data after a game. Will also create new entry if user not found
-// By default, adds 1 to games played
-export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 1) {
-    const leaderboardFile = './data/leaderboard.json';
-
+// By default, adds 0 to games played
+export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 0) {
   // Ensure the leaderboard file exists
-  if (!fs.existsSync(leaderboardFile)) {
+  if (!fs.existsSync('./data/leaderboard.json')) {
     // If not, create an empty leaderboard
-    fs.writeFileSync(leaderboardFile, JSON.stringify([], null, 2), 'utf8');
+    fs.writeFileSync('./data/leaderboard.json', JSON.stringify([], null, 2), 'utf8');
   }
 
-  const rawData = fs.readFileSync(leaderboardFile, 'utf-8');
+  const rawData = fs.readFileSync('./data/leaderboard.json', 'utf-8');
   const leaderboard = JSON.parse(rawData);
 
   // Find user entry
