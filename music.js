@@ -1,3 +1,5 @@
+/*
+
 // Command: !play <song name or YouTube link> 
 import { DisTube } from "distube";
 import { Client, GatewayIntentBits } from "discord.js";
@@ -66,3 +68,5 @@ distube.on("error", (channel, error) => {
 });
 
 client.login(process.env.DISCORD_TOKEN);
+
+*/

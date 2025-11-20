@@ -19,7 +19,7 @@ import { getShuffledOptions, getResult } from "./rps.js";
 import { startWordle } from "./wordle.js";
 import { cfCommand } from "./cf.js";
 
-import { flipCoin } from "./cf.js";
+//import { flipCoin } from "./cf.js";
 import fs from "fs";
 
 const app = express();
