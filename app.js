@@ -200,13 +200,13 @@ if (chosenSide) {
       // --- Update leaderboard command ---
       if (name === "update_leaderboard") {
         const params = req.body.data.options || [];
-        let userId = null;
+        let userId = interaction.user.id;;
         let pointsToAdd = null;
         let gamesPlayedToAdd = null;
 
         for (let param of params) {
-          if (param.name === "user") userId = param.value;
-          else if (param.name === "points") pointsToAdd = param.value;
+          /*if (param.name === "user") /*userId = param.value;
+          else*/ if (param.name === "points") pointsToAdd = param.value;
           else if (param.name === "games") gamesPlayedToAdd = param.value;
         }
 

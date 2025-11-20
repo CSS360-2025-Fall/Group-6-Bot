@@ -64,7 +64,7 @@ const LEADERBOARD_COMMAND = {
 const UPDATE_LEADERBOARD_COMMAND = {
   name: "update_leaderboard",
   description:
-    "Used by games to update points and games played on the leaderboard",
+    "Test command for updating leaderboard without game",
   options: [
     {
       type: 3,
