@@ -1,3 +1,4 @@
+import "./music.js";
 import "dotenv/config";
 import express from "express";
 import {
@@ -15,8 +16,10 @@ import {
   updateLeaderboard,
 } from "./utils.js";
 import { getShuffledOptions, getResult } from "./rps.js";
-import { startWordle } from "./wordle.js";
-import { flipCoin } from "./cf.js"; 
+import { does_user_exist, get_answer, get_date, get_list_of_guesses, get_word_of_day, validate_guess, write_JSON_object } from "./wordler.js";
+import { cfCommand } from "./cf.js";
+
+//import { flipCoin } from "./cf.js";
 import fs from "fs";
 
 const app = express();
@@ -41,21 +44,62 @@ app.post(
       const { name } = data;
 
       // --- Coinflip command ---
-      if (name === "coinflip") {
-        const result = flipCoin();
-        return res.send({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-            components: [
-              {
-                type: MessageComponentTypes.TEXT_DISPLAY,
-                content: `🪙 The coin landed on **${result}**!`,
-              },
-            ],
+if (name === "coinflip") {
+  try {
+    // Call cfCommand.execute with a fake interaction-like object
+    // Since express/discord-interactions doesn’t give you a Discord.js Interaction,
+    // we simulate the reply by capturing the string.
+    const chosenSide = data.options?.find(opt => opt.name === "side")?.value;
+    const wager = data.options?.find(opt => opt.name === "wager")?.value;
+
+    // Use cfCommand logic directly
+
+const randomFlip = Math.random() < 0.5 ? "heads" : "tails";
+const result = randomFlip;
+
+let response = `🪙 The coin landed on **${result}**!`;
+
+if (wager) {
+  response += `\n💰 Wager: **${wager}**`;
+}
+
+if (chosenSide) {
+  if (chosenSide === result) {
+    response += `\n✅ You guessed correctly!`;
+  } else {
+    response += `\n❌ You guessed ${chosenSide}, but it landed on ${result}.`;
+  }
+}
+
+    return res.send({
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: {
+        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+        components: [
+          {
+            type: MessageComponentTypes.TEXT_DISPLAY,
+            content: response,
           },
-        });
-      }
+        ],
+      },
+    });
+  } catch (err) {
+    console.error("coinflip error", err);
+    return res.send({
+      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+      data: {
+        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+        components: [
+          {
+            type: MessageComponentTypes.TEXT_DISPLAY,
+            content: "There was an error handling your coinflip request.",
+          },
+        ],
+      },
+    });
+  }
+}
+
 
       // --- Wordle command ---
       if (name === "dwordle") {
@@ -63,12 +107,31 @@ app.post(
         const userId =
           context === 0 ? req.body.member.user.id : req.body.user.id;
 
-        let response;
-        try {
-          response = await startWordle(userId);
-        } catch (e) {
-          console.error("dwordle error", e);
-          response = { content: "There was an error handling your request." };
+        if (subcommand === "guess") {
+          const guess = req.body.data.options[0].options[0].value.toLowerCase();
+          const todays_date = get_date();
+          guesses.push(guess);
+          write_JSON_object(userId, guesses, todays_date);
+
+          let check = validate_guess(guess, userId);
+          let response_string = check;
+          let response_template;
+          const answer = get_answer(userId);
+
+          if (guess.toLowerCase() === answer.toLowerCase()) {
+            response_template += `${response_string}
+            ✅ Correct! The word was "${answer}".`;
+          } else {
+            response_template += `${response_string}
+            <@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
+          }
+
+          return res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              content: response_template,
+            },
+          });
         }
 
         return res.send({
@@ -76,7 +139,10 @@ app.post(
           data: {
             flags: InteractionResponseFlags.IS_COMPONENTS_V2,
             components: [
-              { type: MessageComponentTypes.TEXT_DISPLAY, content: response.content },
+              {
+                type: MessageComponentTypes.TEXT_DISPLAY,
+                content: response.content,
+              },
             ],
           },
         });
@@ -99,7 +165,7 @@ app.post(
       }
 
       // --- Challenge command ---
-      if (name === "challenge" && id) {
+      if (name === "rps" && id) {
         const context = req.body.context;
         const userId =
           context === 0 ? req.body.member.user.id : req.body.user.id;
@@ -153,13 +219,13 @@ app.post(
       // --- Update leaderboard command ---
       if (name === "update_leaderboard") {
         const params = req.body.data.options || [];
-        let userId = null;
+        let userId = interaction.user.id;;
         let pointsToAdd = null;
         let gamesPlayedToAdd = null;
 
         for (let param of params) {
-          if (param.name === "user") userId = param.value;
-          else if (param.name === "points") pointsToAdd = param.value;
+          /*if (param.name === "user") /*userId = param.value;
+          else*/ if (param.name === "points") pointsToAdd = param.value;
           else if (param.name === "games") gamesPlayedToAdd = param.value;
         }
 
@@ -197,46 +263,45 @@ app.post(
           },
         });
       }
-     // --- Info command ---
-if (name === "info") {
-  try {
-    const readmeContent = fs.readFileSync("./README.md", "utf8");
+      // --- Info command ---
+      if (name === "info") {
+        try {
+          const readmeContent = fs.readFileSync("./README.md", "utf8");
 
-    // Discord messages have a 2000 character limit
-    const message =
-      readmeContent.length > 2000
-        ? readmeContent.substring(0, 2000)
-        : readmeContent;
+          // Discord messages have a 2000 character limit
+          const message =
+            readmeContent.length > 2000
+              ? readmeContent.substring(0, 2000)
+              : readmeContent;
 
-    return res.send({
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: {
-        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-        components: [
-          {
-            type: MessageComponentTypes.TEXT_DISPLAY,
-            content: message,
-          },
-        ],
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    return res.send({
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: {
-        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-        components: [
-          {
-            type: MessageComponentTypes.TEXT_DISPLAY,
-            content: "Could not read README.md file.",
-          },
-        ],
-      },
-    });
-  }
-}
-
+          return res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+              components: [
+                {
+                  type: MessageComponentTypes.TEXT_DISPLAY,
+                  content: message,
+                },
+              ],
+            },
+          });
+        } catch (err) {
+          console.error(err);
+          return res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+              components: [
+                {
+                  type: MessageComponentTypes.TEXT_DISPLAY,
+                  content: "Could not read README.md file.",
+                },
+              ],
+            },
+          });
+        }
+      }
 
       // --- Help command ---
       if (name === "help") {
@@ -265,4 +330,3 @@ if (name === "info") {
 app.listen(PORT, () => {
   console.log("Listening on port", PORT);
 });
-

@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { updateRoles } from "./roles.js";
 import fs from 'fs';
 
 export async function DiscordRequest(endpoint, options) {
@@ -51,13 +52,14 @@ export function capitalize(str) {
 // Load and parse the leaderboard data from JSON file to be displayed to users
 // Expects: key specifying which field to sort by, and n number of top entries to display
 export function getLeaderboard(key, n) {
+  // Ensure the leaderboard file exists
+  if (!fs.existsSync('./data/leaderboard.json')) {
+    // If not, return message
+    return 'Leaderboard is empty. Play a game to earn points!';
+  }
+
   const rawData = fs.readFileSync('./data/leaderboard.json', 'utf-8');
   const leaderboard = JSON.parse(rawData);
-
-  // If leaderboard is empty, return message
-  if (leaderboard.length === 0) {
-      return 'Leaderboard is empty.';
-  }
 
   // Sort by key descending
   leaderboard.sort((a, b) => b[key] - a[key]);
@@ -83,8 +85,14 @@ export function getLeaderboard(key, n) {
 }
 
 // Updated leaderboard data after a game. Will also create new entry if user not found
-// By default, adds 1 to games played
-export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 1) {
+// By default, adds 0 to games played
+export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 0) {
+  // Ensure the leaderboard file exists
+  if (!fs.existsSync('./data/leaderboard.json')) {
+    // If not, create an empty leaderboard
+    fs.writeFileSync('./data/leaderboard.json', JSON.stringify([], null, 2), 'utf8');
+  }
+
   const rawData = fs.readFileSync('./data/leaderboard.json', 'utf-8');
   const leaderboard = JSON.parse(rawData);
 
@@ -103,4 +111,27 @@ export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 1) {
 
   // Write updated leaderboard back to file
   fs.writeFileSync('./data/leaderboard.json', JSON.stringify(leaderboard, null, 2));
+}
+
+// Checks leaderboard data for specific user and field
+// If not field specified, will return user's points
+export function checkLeaderboard(userId, key = points) {
+  // Ensure the leaderboard file exists
+  if (!fs.existsSync('./data/leaderboard.json')) {
+    // If not, return message
+    return null;
+  }
+
+  // Get leaderboard data
+  const leaderboard = JSON.parse('./data/leaderboard.json');
+
+  // Find user entry
+  const userEntry = leaderboard.find(entry => entry.user === userId);
+  // If not found, return null
+  if (!userEntry) {
+    return null;
+  } else {
+    // If found return requested key value
+    return userEntry[key];
+  }
 }
