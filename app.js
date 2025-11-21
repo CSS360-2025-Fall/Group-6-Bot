@@ -1,4 +1,4 @@
-import "./music.js";
+//import "./music.js";
 import "dotenv/config";
 import express from "express";
 import {
@@ -16,7 +16,7 @@ import {
   updateLeaderboard,
 } from "./utils.js";
 import { getShuffledOptions, getResult } from "./rps.js";
-import { does_user_exist, get_answer, get_date, get_list_of_guesses, get_word_of_day, validate_guess, write_JSON_object } from "./wordler.js";
+import { get_answer, get_date, validate_guess, write_JSON_object } from "./wordler.js";
 import { cfCommand } from "./cf.js";
 
 //import { flipCoin } from "./cf.js";
@@ -106,6 +106,7 @@ if (chosenSide) {
         const context = req.body.context;
         const userId =
           context === 0 ? req.body.member.user.id : req.body.user.id;
+          const guesses = [];
 
         if (subcommand === "guess") {
           const guess = req.body.data.options[0].options[0].value.toLowerCase();
