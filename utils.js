@@ -74,7 +74,7 @@ export function getLeaderboard(key, n) {
 
   // Add top n entries to result
   leaderboard.slice(0, n).forEach((entry, index) => {
-      result += (`#${index + 1}: ${entry.user} - ${entry.points} points - ${entry.games_played} games played`);
+      result += (`#${index + 1}: ${getUsername(entry.user)} - ${entry.points} points - ${entry.games_played} games played`);
       if (index < n - 1) {
           result += ('\n');
       }
@@ -86,7 +86,7 @@ export function getLeaderboard(key, n) {
 
 // Updated leaderboard data after a game. Will also create new entry if user not found
 // By default, adds 0 to games played
-export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 0) {
+export function updateLeaderboard(guildId, userId, pointsToAdd, gamesPlayedToAdd = 0) {
   // Ensure the leaderboard file exists
   if (!fs.existsSync('./data/leaderboard.json')) {
     // If not, create an empty leaderboard
@@ -109,21 +109,26 @@ export function updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd = 0) {
     userEntry.games_played += gamesPlayedToAdd;
   }
 
+  // Update user roles based on new points total
+  updateRoles(guildId, userId);
+
   // Write updated leaderboard back to file
   fs.writeFileSync('./data/leaderboard.json', JSON.stringify(leaderboard, null, 2));
 }
 
 // Checks leaderboard data for specific user and field
 // If not field specified, will return user's points
-export function checkLeaderboard(userId, key = points) {
+export function checkLeaderboard(userId, key = "points") {
   // Ensure the leaderboard file exists
   if (!fs.existsSync('./data/leaderboard.json')) {
     // If not, return message
+    console.log("Tried to check empty leaderboard")
     return null;
   }
 
   // Get leaderboard data
-  const leaderboard = JSON.parse('./data/leaderboard.json');
+  const rawData = fs.readFileSync("./data/leaderboard.json", "utf8");
+  const leaderboard = JSON.parse(rawData);
 
   // Find user entry
   const userEntry = leaderboard.find(entry => entry.user === userId);
@@ -134,4 +139,23 @@ export function checkLeaderboard(userId, key = points) {
     // If found return requested key value
     return userEntry[key];
   }
+}
+
+// Gets players username from discord users api based on their user id
+export async function getUsername(userId) {
+    // Requests userId from api
+    const res = await fetch(`https://discord.com/api/v10/users/${userId}`, {
+        headers: {
+            // Provides necessary request authorization
+            "Authorization": `Bot ${process.env.DISCORD_TOKEN}`
+        }
+    });
+
+    if (!res.ok) {
+        console.error("Failed to fetch user:", res.status);
+        return "Username not found";
+    }
+
+    const data = await res.json();
+    return data.username;
 }

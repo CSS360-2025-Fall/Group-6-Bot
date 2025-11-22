@@ -14,6 +14,7 @@ import {
   DiscordRequest,
   getLeaderboard,
   updateLeaderboard,
+  getUsername
 } from "./utils.js";
 import { getShuffledOptions, getResult } from "./rps.js";
 import { get_answer, get_date, validate_guess, write_JSON_object } from "./wordler.js";
@@ -219,36 +220,22 @@ if (chosenSide) {
 
       // --- Update leaderboard command ---
       if (name === "update_leaderboard") {
-        const params = req.body.data.options || [];
-        let userId = interaction.user.id;;
+        const params = req.body.data.options;
+        let guildId = req.body.guild_id;
+        let userId = req.body.member.user.id;
         let pointsToAdd = null;
         let gamesPlayedToAdd = null;
 
         for (let param of params) {
-          /*if (param.name === "user") /*userId = param.value;
-          else*/ if (param.name === "points") pointsToAdd = param.value;
+          /* if (param.name === "user") /userId = param.value;
+          else */ if (param.name === "points") pointsToAdd = param.value;
           else if (param.name === "games") gamesPlayedToAdd = param.value;
         }
 
-        if (!userId || !pointsToAdd) {
-          return res.send({
-            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: {
-              flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-              components: [
-                {
-                  type: MessageComponentTypes.TEXT_DISPLAY,
-                  content: "Error: Please specify user and points",
-                },
-              ],
-            },
-          });
-        }
-
         if (gamesPlayedToAdd !== null) {
-          updateLeaderboard(userId, pointsToAdd, gamesPlayedToAdd);
+          updateLeaderboard(guildId, userId, pointsToAdd, gamesPlayedToAdd);
         } else {
-          updateLeaderboard(userId, pointsToAdd);
+          updateLeaderboard(guildId, userId, pointsToAdd);
         }
 
         return res.send({
@@ -258,12 +245,13 @@ if (chosenSide) {
             components: [
               {
                 type: MessageComponentTypes.TEXT_DISPLAY,
-                content: `Leaderboard updated for ${userId}`,
+                content: `Leaderboard updated for ${getUsername(userId)}`,
               },
             ],
           },
         });
       }
+
       // --- Info command ---
       if (name === "info") {
         try {
