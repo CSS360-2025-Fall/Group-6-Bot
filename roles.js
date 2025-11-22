@@ -1,9 +1,3 @@
-/*
-IF BROKEN: Get guildId by right clicking server in Discord and selecting "Copy Server ID"
-Then paste "GUILD_ID=<copied server ID>" in your .env file
-If "Copy Server ID" option doesn't exist you must enable Developer Mode in your settings
-*/
-
 import 'dotenv/config';
 import { checkLeaderboard } from './utils.js';
 import { Client, GatewayIntentBits } from 'discord.js';
@@ -24,23 +18,20 @@ const roleThresholds = [
 
 // Define role colors for creating new roles
 const roleColors = {
-  Bronze: 'ORANGE',
-  Silver: 'LIGHT_GREY',
-  Gold: 'GOLD',
-  Platinum: 'BLUE',
-  Diamond: 'AQUA',
-  Champion: 'PURPLE',
-  'Grand Champion': 'RED',
-  'Supersonic Legend': 'WHITE'
+  Bronze: '#CD7F32',
+  Silver: '#C0C0C0',
+  Gold: '#FFD700',
+  Platinum: '#00BFFF',
+  Diamond: '#0066FF',
+  Champion: '#8A2BE2',
+  'Grand Champion': '#FF0000',
+  'Supersonic Legend': '#FFFFFF'
 };
 
 // Updates members roles based on current amount of points
-export async function updateRoles(userId) {
-  const GUILD_ID = process.env.GUILD_ID;
-  if (!GUILD_ID) throw new Error('GUILD_ID not defined in .env'); // REFER TO INSTRUCTIONS AT TOP OF ROLES.JS
-
+export async function updateRoles(guildId, userId) {
   // Get server from Discord
-  const guild = await client.guilds.fetch(GUILD_ID);
+  const guild = await client.guilds.fetch(guildId);
   // Get member from guild
   const member = await guild.members.fetch(userId);
 
@@ -69,7 +60,7 @@ export async function updateRoles(userId) {
   if (!role) {
     role = await guild.roles.create({
       name: newRoleName,
-      color: roleColors[newRoleName] || 'DEFAULT',
+      color: roleColors[newRoleName] ?? '#FFFFFF',
       reason: 'Leaderboard role creation'
     });
   }
