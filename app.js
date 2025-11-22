@@ -49,79 +49,79 @@ app.post(
       const { name } = data;
 
       // --- Coinflip command ---
-if (name === "coinflip") {
-  try {
-    // Call cfCommand.execute with a fake interaction-like object
-    // Since express/discord-interactions doesn’t give you a Discord.js Interaction,
-    // we simulate the reply by capturing the string.
-    const chosenSide = data.options?.find(opt => opt.name === "side")?.value;
-    const wagerStr = data.options?.find(opt => opt.name === "wager")?.value;
-    const guildId = req.body.guild_id;
-    const userId = req.body.member.user.id;
+      if (name === "coinflip") {
+        try {
+          // Call cfCommand.execute with a fake interaction-like object
+          // Since express/discord-interactions doesn’t give you a Discord.js Interaction,
+          // we simulate the reply by capturing the string.
+          const chosenSide = data.options?.find(opt => opt.name === "side")?.value;
+          const wagerStr = data.options?.find(opt => opt.name === "wager")?.value;
+          const guildId = req.body.guild_id;
+          const userId = req.body.member.user.id;
 
-    // Flip the coin
-    const randomFlip = Math.random() < 0.5 ? "heads" : "tails";
-    const result = randomFlip;
+          // Flip the coin
+          const randomFlip = Math.random() < 0.5 ? "heads" : "tails";
+          const result = randomFlip;
 
-    let response = `🪙 The coin landed on **${result}**!`;
+          let response = `🪙 The coin landed on **${result}**!`;
 
-    let win = false;
-    if (chosenSide === result) {
-      win = true;
-      response += `\n✅ You guessed correctly!`;
-    } else {
-      win = false;
-      response += `\n❌ You guessed ${chosenSide}, but it landed on ${result}.`;
-    }
+          let win = false;
+          if (chosenSide === result) {
+            win = true;
+            response += `\n✅ You guessed correctly!`;
+          } else {
+            win = false;
+            response += `\n❌ You guessed ${chosenSide}, but it landed on ${result}.`;
+          }
 
-    if (wagerStr) {
-      // Get user points
-      const userPoints = await checkLeaderboard(userId);
+          if (wagerStr) {
+            // Get user points
+            const userPoints = await checkLeaderboard(userId);
 
-      const wager = wagerStr ? parseInt(wagerStr) : 0;
+            const wager = wagerStr ? parseInt(wagerStr) : 0;
 
-      // Check if wager is valid for user
-      if (wager > userPoints) {
-        response = `❌ You cannot wager ${wager} points. You currently have ${userPoints} points.`
-      } else {
-        if (win) {
-          updateLeaderboard(guildId, userId, wager, 1)
-          response += `\n💰 You doubled your wager of **${wager}** points!`;
-        } else {
-          updateLeaderboard(guildId, userId, -wager, 1)
-          response += `\n💰 You lost **${wager}** points`;
+            // Check if wager is valid for user
+            if (wager > userPoints) {
+              response = `❌ You cannot wager ${wager} points. You currently have ${userPoints} points.`
+            } else {
+              if (win) {
+                updateLeaderboard(guildId, userId, wager, 1)
+                response += `\n💰 You doubled your wager of **${wager}** points!`;
+              } else {
+                updateLeaderboard(guildId, userId, -wager, 1)
+                response += `\n💰 You lost **${wager}** points`;
+              }
+            }
+          }
+
+          return res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+              components: [
+                {
+                  type: MessageComponentTypes.TEXT_DISPLAY,
+                  content: response
+                },
+              ],
+            },
+          });
+        } catch (err) {
+          console.error("coinflip error", err);
+          return res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: {
+              flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+              components: [
+                {
+                  type: MessageComponentTypes.TEXT_DISPLAY,
+                  content: "There was an error handling your coinflip request.",
+                },
+              ],
+            },
+          });
         }
       }
-    }
-
-    return res.send({
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: {
-        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-        components: [
-          {
-            type: MessageComponentTypes.TEXT_DISPLAY,
-            content: response
-          },
-        ],
-      },
-    });
-  } catch (err) {
-    console.error("coinflip error", err);
-    return res.send({
-      type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-      data: {
-        flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-        components: [
-          {
-            type: MessageComponentTypes.TEXT_DISPLAY,
-            content: "There was an error handling your coinflip request.",
-          },
-        ],
-      },
-    });
-  }
-}
 
 
       // --- Wordle command ---
@@ -136,7 +136,7 @@ if (name === "coinflip") {
           // Save the Guess & Confirm if it's a valid guess.
           const guess = req.body.data.options[0].options[0].value.toLowerCase();
           let response_string = " ";
-          if(!validate_guess(guess, userId)){
+          if (!validate_guess(guess, userId)) {
             response_string += "Wrong Guess Format, try again!";
           }
           const answer = get_answer(userId);
@@ -188,54 +188,54 @@ if (name === "coinflip") {
         });
       }
 
-     // --- Rock Paper Scissors command ---
-if (name === "rps") {
-  const guildId = req.body.guild_id;
-  const userId = req.body.member.user.id;
+      // --- Rock Paper Scissors command ---
+      if (name === "rps") {
+        const guildId = req.body.guild_id;
+        const userId = req.body.member.user.id;
 
-  const options = req.body.data.options;
-  const userChoice = options.find(opt => opt.name === "object")?.value;
-  const wagerStr = options.find(opt => opt.name === "wager")?.value || 0;
-  const wager = parseInt(wagerStr);
+        const options = req.body.data.options;
+        const userChoice = options.find(opt => opt.name === "object")?.value;
+        const wagerStr = options.find(opt => opt.name === "wager")?.value || 0;
+        const wager = parseInt(wagerStr);
 
-  // Bot picks randomly from rps.js choices
-  const choices = getRPSChoices();
-  const botChoice = choices[Math.floor(Math.random() * choices.length)];
+        // Bot picks randomly from rps.js choices
+        const choices = getRPSChoices();
+        const botChoice = choices[Math.floor(Math.random() * choices.length)];
 
-  // Build player objects for getResult
-  const player = { id: userId, objectName: userChoice, wager };
-  const bot = { id: "BOT", objectName: botChoice };
+        // Build player objects for getResult
+        const player = { id: userId, objectName: userChoice, wager };
+        const bot = { id: "BOT", objectName: botChoice };
 
-  // Get result string (includes payout message)
-  const resultMessage = getResult(player, bot);
+        // Get result string (includes payout message)
+        const resultMessage = getResult(player, bot);
 
-  // Update leaderboard based on outcome
-  if (wager > 0) {
-    const userPoints = await checkLeaderboard(userId);
+        // Update leaderboard based on outcome
+        if (wager > 0) {
+          const userPoints = await checkLeaderboard(userId);
 
-    if (wager > userPoints) {
-      // Not enough points
-      return res.send({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: { content: `❌ You cannot wager ${wager} points. You currently have ${userPoints} points.` },
-      });
-    }
+          if (wager > userPoints) {
+            // Not enough points
+            return res.send({
+              type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+              data: { content: `❌ You cannot wager ${wager} points. You currently have ${userPoints} points.` },
+            });
+          }
 
-    // Decide outcome by checking resultMessage
-    if (resultMessage.includes("wins and earns")) {
-      updateLeaderboard(guildId, userId, wager, 1); // add wager
-    } else if (resultMessage.includes("loses and gets 0")) {
-      updateLeaderboard(guildId, userId, -wager, 1); // subtract wager
-    } else if (resultMessage.includes("tie")) {
-      updateLeaderboard(guildId, userId, 0, 1); // tie, no points change but increment games played
-    }
-  }
+          // Decide outcome by checking resultMessage
+          if (resultMessage.includes("wins and earns")) {
+            updateLeaderboard(guildId, userId, wager, 1); // add wager
+          } else if (resultMessage.includes("loses and gets 0")) {
+            updateLeaderboard(guildId, userId, -wager, 1); // subtract wager
+          } else if (resultMessage.includes("tie")) {
+            updateLeaderboard(guildId, userId, 0, 1); // tie, no points change but increment games played
+          }
+        }
 
-  return res.send({
-    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-    data: { content: resultMessage },
-  });
-}
+        return res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: { content: resultMessage },
+        });
+      }
 
 
 
