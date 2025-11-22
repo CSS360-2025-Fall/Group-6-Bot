@@ -102,7 +102,7 @@ const WORDLE_COMMAND = {
       options: [
         {
           type: 3,
-          name: "word",
+          name: "Type Your Guess:",
           description: "Your guess",
           required: true,
         }
