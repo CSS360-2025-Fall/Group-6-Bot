@@ -17,31 +17,36 @@ export const cfCommand = {
       option.setName("wager")
         .setDescription("Enter your wager (optional)")
     ),
+}
 
-  async execute(interaction) {
-    const chosenSide = interaction.options.getString("side");
-    const wager = interaction.options.getString("wager");
+export async function flipCoin(chosenSide, wagerStr, userId) {
+  // Flip the coin
+  const randomFlip = Math.random() < 0.5 ? "heads" : "tails";
+  const result = randomFlip;
 
-    const randomFlip = Math.random() < 0.5 ? "heads" : "tails";
-    const result = randomFlip;
+  let response = `🪙 The coin landed on **${result}**!`;
 
-    let response = `🪙 The coin landed on **${result}**!`;
+  if (wager) {
+    // Get user points
+    const userPoints = await checkLeaderboard(userId);
 
-    if (wager) {
-      response += `\n💰 Wager: **${wager}**`;
+    const wager = wagerStr ? parseInt(wagerStr) : 0;
+
+    // Check if wager is valid for user
+    if (wager > userPoints) {
+      return await interaction.reply(
+        `❌ You cannot wager ${wager} points. You currently have ${userPoints} points.`
+      )
     }
 
-    if (chosenSide) {
-      if (chosenSide === result) {
-        response += `\n✅ You guessed correctly!`;
-      } else {
-        response += `\n❌ You guessed ${chosenSide}, but it landed on ${result}.`;
-      }
-    }
+    response += `\n💰 Wager: **${wager}**`;
+  }
 
-    await interaction.reply(response);
+  if (chosenSide === result) {
+    response += `\n✅ You guessed correctly!`;
+  } else {
+    response += `\n❌ You guessed ${chosenSide}, but it landed on ${result}.`;
+  }
 
-    await interaction.reply(response);
-  },
-};
-
+  await interaction.reply(response);
+}

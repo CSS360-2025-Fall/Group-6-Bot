@@ -14,11 +14,12 @@ import {
   DiscordRequest,
   getLeaderboard,
   updateLeaderboard,
+  checkLeaderboard,
   getUsername
 } from "./utils.js";
 import { getShuffledOptions, getResult } from "./rps.js";
 import { get_answer, get_date, validate_guess, write_JSON_object } from "./wordler.js";
-import { cfCommand } from "./cf.js";
+import { flipCoin } from "./cf.js";
 
 //import { flipCoin } from "./cf.js";
 import fs from "fs";
@@ -51,26 +52,35 @@ if (name === "coinflip") {
     // Since express/discord-interactions doesn’t give you a Discord.js Interaction,
     // we simulate the reply by capturing the string.
     const chosenSide = data.options?.find(opt => opt.name === "side")?.value;
-    const wager = data.options?.find(opt => opt.name === "wager")?.value;
+    const wagerStr = data.options?.find(opt => opt.name === "wager")?.value;
+    const guildId = req.body.guild_id;
+    const userId = req.body.member.user.id;
 
-    // Use cfCommand logic directly
+    // Flip the coin
+    const randomFlip = Math.random() < 0.5 ? "heads" : "tails";
+    const result = randomFlip;
 
-const randomFlip = Math.random() < 0.5 ? "heads" : "tails";
-const result = randomFlip;
+    let response = `🪙 The coin landed on **${result}**!`;
 
-let response = `🪙 The coin landed on **${result}**!`;
+    if (chosenSide === result) {
+      response += `\n✅ You guessed correctly!`;
+    } else {
+      response += `\n❌ You guessed ${chosenSide}, but it landed on ${result}.`;
+    }
 
-if (wager) {
-  response += `\n💰 Wager: **${wager}**`;
-}
+    if (wagerStr) {
+      // Get user points
+      const userPoints = await checkLeaderboard(userId);
 
-if (chosenSide) {
-  if (chosenSide === result) {
-    response += `\n✅ You guessed correctly!`;
-  } else {
-    response += `\n❌ You guessed ${chosenSide}, but it landed on ${result}.`;
-  }
-}
+      const wager = wagerStr ? parseInt(wagerStr) : 0;
+
+      // Check if wager is valid for user
+      if (wager > userPoints) {
+        response = `❌ You cannot wager ${wager} points. You currently have ${userPoints} points.`
+      } else {
+        response += `\n💰 Wager: **${wager}**`;
+      }
+    }
 
     return res.send({
       type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -79,7 +89,7 @@ if (chosenSide) {
         components: [
           {
             type: MessageComponentTypes.TEXT_DISPLAY,
-            content: response,
+            content: response
           },
         ],
       },
