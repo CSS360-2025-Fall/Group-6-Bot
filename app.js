@@ -20,7 +20,7 @@ import {
   getUsername
 } from "./utils.js";
 import { getShuffledOptions, getResult } from "./rps.js";
-import { get_answer, validate_guess, write_JSON_object } from "./wordler.js";
+import { get_answer, validate_guess, write_JSON_object, load_board} from "./wordler.js";
 import { flipCoin } from "./cf.js";
 
 //import { flipCoin } from "./cf.js";
