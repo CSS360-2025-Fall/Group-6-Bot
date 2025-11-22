@@ -211,7 +211,7 @@ if (chosenSide) {
             components: [
               {
                 type: MessageComponentTypes.TEXT_DISPLAY,
-                content: getLeaderboard("points", 5),
+                content: await getLeaderboard("points", 5),
               },
             ],
           },

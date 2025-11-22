@@ -51,7 +51,7 @@ export function capitalize(str) {
 
 // Load and parse the leaderboard data from JSON file to be displayed to users
 // Expects: key specifying which field to sort by, and n number of top entries to display
-export function getLeaderboard(key, n) {
+export async function getLeaderboard(key, n) {
   // Ensure the leaderboard file exists
   if (!fs.existsSync('./data/leaderboard.json')) {
     // If not, return message
@@ -73,12 +73,13 @@ export function getLeaderboard(key, n) {
   let result = 'Leaderboard:\n';
 
   // Add top n entries to result
-  leaderboard.slice(0, n).forEach((entry, index) => {
-      result += (`#${index + 1}: ${getUsername(entry.user)} - ${entry.points} points - ${entry.games_played} games played`);
-      if (index < n - 1) {
-          result += ('\n');
-      }
-  });
+  for (let i = 0; i < n; i++) {
+    const entry = leaderboard[i];
+    const username = await getUsername(entry.user);
+
+    result += `#${i + 1}: ${username} - ${entry.points} points - ${entry.games_played} games played`;
+    if (i < n - 1) result += '\n';
+  }
 
   // Return completed leaderboard as string
   return result;
