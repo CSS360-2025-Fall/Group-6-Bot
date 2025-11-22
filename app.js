@@ -1,6 +1,8 @@
 //import "./music.js";
 import "dotenv/config";
 import express from "express";
+import { getRPSChoices } from "./rps.js";
+
 import {
   InteractionType,
   InteractionResponseType,
@@ -186,41 +188,56 @@ if (name === "coinflip") {
         });
       }
 
-      // --- Challenge command ---
-      if (name === "rps" && id) {
-        const context = req.body.context;
-        const userId =
-          context === 0 ? req.body.member.user.id : req.body.user.id;
-        const options = req.body.data.options;
-        const objectName = options.find((opt) => opt.name === "object")?.value;
-        const wager = options.find((opt) => opt.name === "wager")?.value || 0;
+     // --- Rock Paper Scissors command ---
+if (name === "rps") {
+  const guildId = req.body.guild_id;
+  const userId = req.body.member.user.id;
 
-        activeGames[id] = { id: userId, objectName, wager };
+  const options = req.body.data.options;
+  const userChoice = options.find(opt => opt.name === "object")?.value;
+  const wagerStr = options.find(opt => opt.name === "wager")?.value || 0;
+  const wager = parseInt(wagerStr);
 
-        return res.send({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-            components: [
-              {
-                type: MessageComponentTypes.TEXT_DISPLAY,
-                content: `Rock paper scissors challenge from <@${userId}>`,
-              },
-              {
-                type: MessageComponentTypes.ACTION_ROW,
-                components: [
-                  {
-                    type: MessageComponentTypes.BUTTON,
-                    custom_id: `accept_button_${req.body.id}`,
-                    label: "Accept",
-                    style: ButtonStyleTypes.PRIMARY,
-                  },
-                ],
-              },
-            ],
-          },
-        });
-      }
+  // Bot picks randomly from rps.js choices
+  const choices = getRPSChoices();
+  const botChoice = choices[Math.floor(Math.random() * choices.length)];
+
+  // Build player objects for getResult
+  const player = { id: userId, objectName: userChoice, wager };
+  const bot = { id: "BOT", objectName: botChoice };
+
+  // Get result string (includes payout message)
+  const resultMessage = getResult(player, bot);
+
+  // Update leaderboard based on outcome
+  if (wager > 0) {
+    const userPoints = await checkLeaderboard(userId);
+
+    if (wager > userPoints) {
+      // Not enough points
+      return res.send({
+        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+        data: { content: `❌ You cannot wager ${wager} points. You currently have ${userPoints} points.` },
+      });
+    }
+
+    // Decide outcome by checking resultMessage
+    if (resultMessage.includes("wins and earns")) {
+      updateLeaderboard(guildId, userId, wager, 1); // add wager
+    } else if (resultMessage.includes("loses and gets 0")) {
+      updateLeaderboard(guildId, userId, -wager, 1); // subtract wager
+    } else if (resultMessage.includes("tie")) {
+      updateLeaderboard(guildId, userId, 0, 1); // tie, no points change but increment games played
+    }
+  }
+
+  return res.send({
+    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+    data: { content: resultMessage },
+  });
+}
+
+
 
       // --- Leaderboard command ---
       if (name === "leaderboard") {
