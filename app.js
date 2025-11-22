@@ -23,6 +23,7 @@ import { flipCoin } from "./cf.js";
 
 //import { flipCoin } from "./cf.js";
 import fs from "fs";
+import e from "express";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -62,9 +63,12 @@ if (name === "coinflip") {
 
     let response = `🪙 The coin landed on **${result}**!`;
 
+    let win = false;
     if (chosenSide === result) {
+      win = true;
       response += `\n✅ You guessed correctly!`;
     } else {
+      win = false;
       response += `\n❌ You guessed ${chosenSide}, but it landed on ${result}.`;
     }
 
@@ -78,7 +82,13 @@ if (name === "coinflip") {
       if (wager > userPoints) {
         response = `❌ You cannot wager ${wager} points. You currently have ${userPoints} points.`
       } else {
-        response += `\n💰 Wager: **${wager}**`;
+        if (win) {
+          updateLeaderboard(guildId, userId, wager, 1)
+          response += `\n💰 You doubled your wager of **${wager}** points!`;
+        } else {
+          updateLeaderboard(guildId, userId, -wager, 1)
+          response += `\n💰 You lost **${wager}** points`;
+        }
       }
     }
 
