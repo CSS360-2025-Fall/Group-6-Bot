@@ -149,12 +149,11 @@ app.post(
             response_template += `${response_string}
             <@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
           }
-
+          
           load_board(userId);
-
           return res.send({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: { content: response_template + "Data Written to JSON" }
+            data: { content: response_template + "\nData Written to JSON" }
           });
         }
 

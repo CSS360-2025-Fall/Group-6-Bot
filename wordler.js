@@ -1,8 +1,8 @@
 import { readFile } from 'fs/promises';
 import fs from 'fs';
 import Canvas from 'canvas';
-import { AttachmentBuilder, Message } from 'discord.js';
 
+// curl --location --request POST "https://api.imgbb.com/1/upload?expiration=600&key=cad93104ca28e3a641679cf17212d2e5" --form "image=@/home/richipeu/Group-6-Bot/data/board.png"
 
 const wordle_file = './data/wordledata.json';
 const MAX_ATTEMPTS = 6;
