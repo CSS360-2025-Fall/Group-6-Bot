@@ -281,7 +281,7 @@ app.post(
             components: [
               {
                 type: MessageComponentTypes.TEXT_DISPLAY,
-                content: `Leaderboard updated for ${getUsername(userId)}`,
+                content: `Leaderboard updated for ${await getUsername(userId)}`,
               },
             ],
           },
