@@ -1,6 +1,7 @@
 import { readFile } from 'fs/promises';
 import fs from 'fs';
 import Canvas from 'canvas';
+import e from 'express';
 
 // curl --location --request POST "https://api.imgbb.com/1/upload?expiration=600&key=cad93104ca28e3a641679cf17212d2e5" --form "image=@/home/richipeu/Group-6-Bot/data/board.png"
 
@@ -154,13 +155,22 @@ export function validate_guess(guess, userId) {
 
     // Check if user exists
     let user = users.find(user => user.userID === userId);
-    const guess_amount = get_number_of_guesses(userId);
+    const guess_amount = get_list_of_guesses(userId).length;
+    if (guess == user.answer || !(guess_amount < MAX_ATTEMPTS)) {
+        user.last_day_played = get_date();
+    }
     if (!word_in_list(guess) || !(typeof guess === 'string' && guess.length === WORD_LEN && /^[A-Za-z]+$/.test(guess)) || !(guess_amount < MAX_ATTEMPTS)) {
+        if (!(guess_amount < MAX_ATTEMPTS)) {
+            user.losses += 1;
+            user.guesses.push(guess);
+            fs.writeFileSync(wordle_file, JSON.stringify(users, null, 2));
+        }
         return false;
     }
-    console.log(user.guesses);
+    if (guess == user.answer) {
+        user.wins += 1;
+    }
     user.guesses.push(guess);
-    console.log(user.guesses);
     fs.writeFileSync(wordle_file, JSON.stringify(users, null, 2));
     return true;
 }
@@ -176,15 +186,6 @@ export function get_answer(userId) {
     return user.answer;
 }
 
-
-
-function get_number_of_guesses(userId) {
-    const raw_data = fs.readFileSync(wordle_file, 'utf8');
-    const users = JSON.parse(raw_data);
-    let user = users.find(user => user.userID === userId);
-    return user.guesses.length;
-}
-
 export function get_list_of_guesses(userId) {
     const raw_data = fs.readFileSync(wordle_file, 'utf8');
     const users = JSON.parse(raw_data);
@@ -193,10 +194,8 @@ export function get_list_of_guesses(userId) {
         console.error(`User ${userId} not found`);
         return []; // return empty array instead of crashing
     }
-    console.log(user.guesses, Array.isArray(user.guesses));
     return user.guesses;
 }
-
 
 export function does_user_exist(userId) {
     const raw_data = fs.readFileSync(wordle_file, 'utf8');
@@ -205,13 +204,41 @@ export function does_user_exist(userId) {
     return user;
 }
 
-function find_user(userId) {
-    const raw_data = fs.readFileSync(wordle_file, 'utf8');
-    const users = JSON.parse(raw_data);
-    return users.find(user => user.userID === userId);
+export function game_won(userId) {
+    return get_list_of_guesses(userId).includes(get_answer(userId));
 }
 
-function get_users() {
+export function already_played(userId) {
+    // Ensure the leaderboard file exists
+    if (!fs.existsSync(wordle_file)) {
+        // If not, create an empty wordle file.
+        fs.writeFileSync(wordle_file, JSON.stringify([], null, 2), 'utf8');
+    }
+
     const raw_data = fs.readFileSync(wordle_file, 'utf8');
-    return JSON.parse(raw_data);
+    const users = JSON.parse(raw_data);
+
+    // Check if user exists
+    let user = users.find(user => user.userID === userId);
+
+
+    if (user.last_day_played == get_date()) {
+        return true;
+    }
+    return false;
+}
+
+export function clear_guesses(userId){
+    if (!fs.existsSync(wordle_file)) {
+        // If not, create an empty wordle file.
+        fs.writeFileSync(wordle_file, JSON.stringify([], null, 2), 'utf8');
+    }
+
+    const raw_data = fs.readFileSync(wordle_file, 'utf8');
+    const users = JSON.parse(raw_data);
+
+    // Check if user exists
+    let user = users.find(user => user.userID === userId);
+    const empty_arr = [];
+    user.guesses = empty_arr;
 }

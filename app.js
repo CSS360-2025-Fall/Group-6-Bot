@@ -20,7 +20,7 @@ import {
   getUsername
 } from "./utils.js";
 import { getShuffledOptions, getResult } from "./rps.js";
-import { get_answer, validate_guess, write_JSON_object, load_board} from "./wordler.js";
+import { get_answer, validate_guess, write_JSON_object, load_board, already_played, game_won, clear_guesses } from "./wordler.js";
 import { flipCoin } from "./cf.js";
 
 //import { flipCoin } from "./cf.js";
@@ -135,25 +135,38 @@ app.post(
         if (subcommand === "guess") {
           // Save the Guess & Confirm if it's a valid guess.
           const guess = req.body.data.options[0].options[0].value.toLowerCase();
-          let response_string = " ";
-          if (!validate_guess(guess, userId)) {
-            response_string += "Wrong Guess Format, try again!";
-          }
-          const answer = get_answer(userId);
-
+          let response_string = "";
           let response_template = "";
-          if (guess.toLowerCase() === answer.toLowerCase()) {
-            response_template += `${response_string}
+          if (!already_played(userId)) {
+            if (!validate_guess(guess, userId)) {
+              response_string += "Wrong Guess Format, try again!";
+            }
+            const answer = get_answer(userId);
+
+            if (guess.toLowerCase() === answer.toLowerCase()) {
+              response_template += `${response_string}
             ✅ Correct! The word was "${answer}".`;
-          } else {
-            response_template += `${response_string}
+            } else {
+              response_template += `${response_string}
             <@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
+            }
+          } else {
+            clear_guesses(userId);
+            let won_string = "";
+            if (game_won(userId)) {
+              won_string += "won!";
+            } else {
+              won_string += "lost!";
+            }
+            response_template += `<@${userId}>: You've already completed the Wordle Today.
+You ${won_string} 
+Play again tommorow.`
           }
-          
+
           load_board(userId);
           return res.send({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: { content: response_template + "\nData Written to JSON" }
+            data: { content: response_template }
           });
         }
 

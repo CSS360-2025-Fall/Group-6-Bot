@@ -1,6 +1,6 @@
 [
   {
-    "userID": "5406186526",
+    "userID": "5",
     "guesses": [
       "guess"
     ],
@@ -11,7 +11,7 @@
     "losses": 0
   },
   {
-    "userID": "566786526",
+    "userID": "4",
     "guesses": [],
     "last_day_played": null,
     "answer": "yawns",
@@ -20,15 +20,57 @@
     "losses": 0
   },
   {
-    "userID": "566737327406186526",
-    "guesses": [
-      "scope",
-      "slump"
-    ],
+    "userID": "3",
+    "guesses": [],
     "last_day_played": null,
     "answer": "sprig",
     "last_day_answer_generated": "11/22/2025",
     "wins": 0,
     "losses": 0
+  },
+  {
+    "userID": "2",
+    "guesses": [
+      "slate",
+      "white",
+      "aider",
+      "guess"
+    ],
+    "last_day_played": "11/23/2025",
+    "answer": "bough",
+    "last_day_answer_generated": "11/23/2025",
+    "wins": 0,
+    "losses": 1
+  },
+  {
+    "userID": "1",
+    "guesses": [
+      "start",
+      "stomp",
+      "stuck",
+      "villi"
+    ],
+    "last_day_played": "11/23/2025",
+    "answer": "rites",
+    "last_day_answer_generated": "11/23/2025",
+    "wins": 1,
+    "losses": 0
+  },
+  {
+    "userID": "566737327406186526",
+    "guesses": [
+      "crane",
+      "stomp",
+      "stuck",
+      "villi",
+      "crane",
+      "crane",
+      "crane"
+    ],
+    "last_day_played": "11/23/2025",
+    "answer": "moats",
+    "last_day_answer_generated": "11/23/2025",
+    "wins": 0,
+    "losses": 1
   }
 ]
