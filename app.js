@@ -1,4 +1,4 @@
-//import "./music.js";
+import "./music.js";
 import "dotenv/config";
 import express from "express";
 import { getRPSChoices } from "./rps.js";
