@@ -1,9 +1,8 @@
+import { Client, GatewayIntentBits } from "discord.js";
+import dotenv from "dotenv";
+dotenv.config();
+
 console.log("🔧 MUSIC.JS STARTING...");
-
-const { Client, GatewayIntentBits } = require("discord.js");
-require("dotenv").config();
-
-console.log("🔧 Discord.js loaded");
 
 const client = new Client({
   intents: [
@@ -14,13 +13,7 @@ const client = new Client({
   ],
 });
 
-const timeout = setTimeout(() => {
-  console.log("❌ TIMEOUT: Discord login took too long");
-  process.exit(1);
-}, 30000);
-
 client.once("ready", () => {
-  clearTimeout(timeout);
   console.log("✅ MUSIC BOT READY! Logged in as: " + client.user.tag);
 });
 
@@ -39,10 +32,4 @@ client.on("messageCreate", async (message) => {
 });
 
 console.log("🔧 Attempting login...");
-client.login(process.env.DISCORD_TOKEN)
-  .then(() => console.log("🔧 Login process started"))
-  .catch(error => {
-    clearTimeout(timeout);
-    console.log("❌ Login error:", error.message);
-    process.exit(1);
-  });
+client.login(process.env.DISCORD_TOKEN);
