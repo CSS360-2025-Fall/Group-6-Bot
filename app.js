@@ -349,6 +349,7 @@ With this bot you will be able to play games to earn points and compete with you
 • **Wordle** - Daily word puzzle
 • **Chess** - Strategic board game (coming soon)
 • **Rock Paper Scissors** - Quick matches
+• **Coin Flip** - Test you luck 
 • More games coming soon!
 
 **Point System**
