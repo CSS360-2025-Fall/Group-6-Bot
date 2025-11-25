@@ -57,16 +57,25 @@
     "losses": 0
   },
   {
-    "userID": "566737327406186526",
-    "guesses": [
-      "crane",
-      "stomp",
-      "stuck"
-    ],
+    "userID": "406186526",
+    "guesses": [],
     "last_day_played": "11/25/2025",
-    "answer": "hacks",
+    "answer": "hadst",
     "last_day_answer_generated": "11/25/2025",
     "wins": 0,
     "losses": 2
+  },
+  {
+    "userID": "566737327406186526",
+    "guesses": [
+      "saver",
+      "saved",
+      "thank"
+    ],
+    "last_day_played": null,
+    "answer": "sties",
+    "last_day_answer_generated": "11/25/2025",
+    "wins": 0,
+    "losses": 0
   }
 ]

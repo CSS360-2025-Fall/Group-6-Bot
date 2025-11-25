@@ -138,9 +138,6 @@ app.post(
           let response_string = "";
           let response_template = "";
           if (!already_played(userId)) {
-            if (!validate_guess(guess, userId)) {
-              response_string += "Wrong Guess Format, try again!";
-            }
             const answer = get_answer(userId);
 
             if (guess.toLowerCase() === answer.toLowerCase()) {
@@ -149,6 +146,9 @@ app.post(
             } else {
               response_template += `${response_string}
 <@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
+            }
+            if (!validate_guess(guess, userId)) {
+              response_template = "Wrong Guess Format, try again!";
             }
           } else {
             clear_guesses(userId);
