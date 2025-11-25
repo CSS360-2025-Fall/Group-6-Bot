@@ -342,28 +342,48 @@ Play again tommorow.`
       }
 
       // --- Help command ---
-      if (name === "help") {
-        const banner =
-          "🎮 Game Rules & Point System\n\nPlay games to earn points and compete with friends!";
-        return res.send({
-          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-          data: {
-            flags: InteractionResponseFlags.IS_COMPONENTS_V2,
-            components: [
-              { type: MessageComponentTypes.TEXT_DISPLAY, content: banner },
-            ],
-          },
-        });
-      }
+  if (name === "help") {
+  const banner = `🎮 **Game Rules & Point System**
 
-      console.error(`unknown command: ${name}`);
-      return res.status(400).json({ error: "unknown command" });
-    }
+With this bot you will be able to play games to earn points and compete with your friends!
 
-    console.error("unknown interaction type", type);
-    return res.status(400).json({ error: "unknown interaction type" });
-  },
-);
+📊 **Available Games**
+• Wordle - Daily word puzzle
+• Chess - Strategic board game
+• Rock Paper Scissors - Quick matches
+• More games coming soon!
+
+🏆 **Point System**
+Different games award different point amounts:
+• Winning games: Earn points based on game difficulty
+• Losing games: Lose points when defeated by other players
+• Daily bonuses: Extra points for consistent play
+
+📈 **Leaderboard**
+Use \`/leaderboard\` to check your standings and compete with friends!
+
+🎁 **Rewards**
+Earn enough points to unlock exclusive rewards:
+• Custom Emotes - Show off your achievements
+• Special Roles - Unique roles in the server
+• Badges - Display your gaming prowess
+• More rewards as you level up!
+
+⚡ **Getting Started**
+Use \`/challenge\` to start a Rock Paper Scissors match!
+
+Happy gaming! 🎯`;
+
+  return res.send({
+    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+    data: {
+      flags: InteractionResponseFlags.IS_COMPONENTS_V2,
+      components: [
+        { type: MessageComponentTypes.TEXT_DISPLAY, content: banner },
+      ],
+    },
+  });
+}
 
 app.listen(PORT, () => {
   console.log("Listening on port", PORT);
