@@ -136,9 +136,8 @@ app.post(
           const guess = req.body.data.options[0].options[0].value.toLowerCase();
           let response_string = "";
           let response_template = "";
+          const answer = get_answer(userId);
           if (!already_played(userId)) {
-            const answer = get_answer(userId);
-
             if (guess.toLowerCase() === answer.toLowerCase()) {
               response_template += `${response_string}
 ✅ Correct! The word was "${answer}".`;
@@ -158,7 +157,7 @@ app.post(
               won_string += "lost!";
             }
             response_template += `<@${userId}>: You've already completed the Wordle Today.
-You ${won_string} 
+You ${won_string} The answer was ${answer} 
 Play again tommorow.`
           }
           const board = await load_board(userId);
