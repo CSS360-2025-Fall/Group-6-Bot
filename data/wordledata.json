@@ -70,12 +70,15 @@
     "guesses": [
       "saver",
       "saved",
-      "thank"
+      "thank",
+      "thank",
+      "thank",
+      "sties"
     ],
-    "last_day_played": null,
+    "last_day_played": "11/25/2025",
     "answer": "sties",
     "last_day_answer_generated": "11/25/2025",
-    "wins": 0,
+    "wins": 1,
     "losses": 0
   }
 ]

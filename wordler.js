@@ -1,7 +1,5 @@
 import { readFile } from 'fs/promises';
 import fs from 'fs';
-import Canvas from 'canvas';
-import e from 'express';
 
 // curl --location --request POST "https://api.imgbb.com/1/upload?expiration=600&key=cad93104ca28e3a641679cf17212d2e5" --form "image=@/home/richipeu/Group-6-Bot/data/board.png"
 
@@ -9,57 +7,26 @@ const wordle_file = './data/wordledata.json';
 const MAX_ATTEMPTS = 6;
 const WORD_LEN = 5;
 
-function get_image(guess, answer, i) {
-    if (guess === undefined) { return 0; }
-    else if (guess.charAt(i) == answer.charAt(i)) { return 1; }
-    else if (answer.includes(guess.charAt(i))) { return 2; }
-    else { return 3; }
-}
-
 export async function load_board(userId) {
     const guesses = get_list_of_guesses(userId);
     const answer = get_answer(userId);
 
-    const canvas = Canvas.createCanvas(330, 397);
-    const context = canvas.getContext('2d');
-
-    const background = await Canvas.loadImage('./images/BlankImage.png');
-    context.drawImage(background, 0, 0, canvas.width, canvas.height);
-
-    context.font = '42px Clear Sans, Helvetica Neue, Arial, sans-serif';
-    context.textAlign = 'center';
-    context.fillStyle = '#d7dadc';
-
-    const absent_square = await Canvas.loadImage('./images/ColorAbsent.png');
-    const empty_square = await Canvas.loadImage('./images/EmptySquare.png');
-    const green_square = await Canvas.loadImage('./images/GreenSquare.png');
-    const yellow_square = await Canvas.loadImage('./images/YellowSquare.png');
-    let square = absent_square;
-
-    let square_size = 62;
-    let row_offset = 0;
-    let buffer = 0;
-
-    for (let j = 0; j < MAX_ATTEMPTS; j++) {
+    const rows = [];
+    for (let r = 0; r < MAX_ATTEMPTS; r++) {
+        const guess = guesses[r] || ''.padEnd(WORD_LEN, ' ');
+        let line = '';
         for (let i = 0; i < WORD_LEN; i++) {
-            const image_number = get_image(guesses[j], answer, i);
-
-            if (image_number == 0) { square = empty_square; }
-            else if (image_number == 1) { square = green_square; }
-            else if (image_number == 2) { square = yellow_square; }
-            else if (image_number == 3) { square = absent_square; }
-
-            context.drawImage(square, i * square_size + buffer, row_offset, square_size, square_size);
-            if (guesses[j] != undefined) {
-                context.fillText(guesses[j].charAt(i), (square_size / 2) + buffer + square_size * i, row_offset + 42);
-            }
-
-            buffer += 5;
+            const g = guess[i] || ' ';
+            if (g === ' ') { line += '⬛'; continue; }
+            if (g === answer[i]) line += '🟩';
+            else if (answer.includes(g)) line += '🟨';
+            else line += '⬛';
         }
-        buffer = 0;
-        row_offset += square_size + 5;
+        // show letters under the row for entered guesses
+        const letters = (guesses[r] || '').padEnd(WORD_LEN, ' ').split('').map(c => (c === ' ' ? '·' : c)).join('');
+        rows.push(`${line}  \`${letters}\``);
     }
-    fs.writeFileSync("./data/board.png", canvas.toBuffer());
+    return rows.join('\n');
 }
 
 function create_JSON_object(userId, guesses = []) {
@@ -228,7 +195,7 @@ export function already_played(userId) {
     return false;
 }
 
-export function clear_guesses(userId){
+export function clear_guesses(userId) {
     if (!fs.existsSync(wordle_file)) {
         // If not, create an empty wordle file.
         fs.writeFileSync(wordle_file, JSON.stringify([], null, 2), 'utf8');

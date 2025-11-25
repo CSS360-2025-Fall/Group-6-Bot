@@ -141,7 +141,7 @@ app.post(
 
             if (guess.toLowerCase() === answer.toLowerCase()) {
               response_template += `${response_string}
-            ✅ Correct! The word was "${answer}".`;
+✅ Correct! The word was "${answer}".`;
             } else {
               response_template += `${response_string}
 <@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
@@ -161,11 +161,11 @@ app.post(
 You ${won_string} 
 Play again tommorow.`
           }
+          const board = await load_board(userId);
 
-          load_board(userId);
           return res.send({
             type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-            data: { content: response_template }
+            data: { content: board + response_template }
           });
         }
 
