@@ -142,7 +142,7 @@ app.post(
             if (guess.toLowerCase() === answer.toLowerCase()) {
               response_template += `${response_string}
               ✅ Correct! The word was "${answer}".`;
-              let points = 1000 - (get_list_of_guesses(userId).length * 200); // Points decrease by 200 for each guess taken
+              let points = 2000 - (get_list_of_guesses(userId).length * 200); // Points decrease by 200 for each guess taken
               updateLeaderboard(req.body.guild_id, userId, points, 1); // Add points for winning and increment games played
               console.log(`User ${userId} earned ${points} points for guessing the word correctly.`);
             } else {
