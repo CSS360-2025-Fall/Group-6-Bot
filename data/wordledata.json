@@ -61,16 +61,12 @@
     "guesses": [
       "crane",
       "stomp",
-      "stuck",
-      "villi",
-      "crane",
-      "crane",
-      "crane"
+      "stuck"
     ],
-    "last_day_played": "11/23/2025",
-    "answer": "moats",
-    "last_day_answer_generated": "11/23/2025",
+    "last_day_played": "11/25/2025",
+    "answer": "hacks",
+    "last_day_answer_generated": "11/25/2025",
     "wins": 0,
-    "losses": 1
+    "losses": 2
   }
 ]

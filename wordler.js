@@ -241,4 +241,5 @@ export function clear_guesses(userId){
     let user = users.find(user => user.userID === userId);
     const empty_arr = [];
     user.guesses = empty_arr;
+    fs.writeFileSync(wordle_file, JSON.stringify(users, null, 2));
 }
