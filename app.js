@@ -149,7 +149,6 @@ app.post(
               response_template = "Wrong Guess Format, try again!";
             }
           } else {
-            clear_guesses(userId);
             let won_string = "";
             if (game_won(userId)) {
               won_string += "won!";
@@ -159,6 +158,7 @@ app.post(
             response_template += `<@${userId}>: You've already completed the Wordle Today.
 You ${won_string} The answer was ${answer} 
 Play again tommorow.`
+            clear_guesses(userId);
           }
           const board = await load_board(userId);
 
