@@ -27,6 +27,7 @@ import fs from "fs";
 import e from "express";
 
 const app = express();
+app.use(express.json());
 const PORT = process.env.PORT || 3000;
 
 // Store for in-progress games
