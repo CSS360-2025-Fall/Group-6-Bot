@@ -82,7 +82,7 @@
     "losses": 0
   },
   {
-    "userID": "566737327406186526",
+    "userID": "737327406186526",
     "guesses": [],
     "last_day_played": "11/25/2025",
     "answer": "sulks",
@@ -106,6 +106,20 @@
     "answer": "dwell",
     "last_day_answer_generated": "11/25/2025",
     "wins": 1,
+    "losses": 0
+  },
+  {
+    "userID": "566737327406186526",
+    "guesses": [
+      "games",
+      "again",
+      "south",
+      "thing"
+    ],
+    "last_day_played": null,
+    "answer": "tight",
+    "last_day_answer_generated": "11/25/2025",
+    "wins": 0,
     "losses": 0
   }
 ]
