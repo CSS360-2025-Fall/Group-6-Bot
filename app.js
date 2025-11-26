@@ -22,7 +22,8 @@ import { getShuffledOptions, getResult } from "./rps.js";
 import { get_answer, validate_guess, write_JSON_object, load_board, already_played, game_won, clear_guesses } from "./wordler.js";
 import { flipCoin } from "./cf.js";
 
-//import { flipCoin } from "./cf.js";
+import { get_list_of_guesses } from "./wordler.js";
+
 import fs from "fs";
 import e from "express";
 
@@ -140,10 +141,13 @@ app.post(
           if (!already_played(userId)) {
             if (guess.toLowerCase() === answer.toLowerCase()) {
               response_template += `${response_string}
-✅ Correct! The word was "${answer}".`;
+              ✅ Correct! The word was "${answer}".`;
+              let points = 1000 - (get_list_of_guesses(userId).length * 200); // Points decrease by 200 for each guess taken
+              updateLeaderboard(req.body.guild_id, userId, points, 1); // Add points for winning and increment games played
+              console.log(`User ${userId} earned ${points} points for guessing the word correctly.`);
             } else {
               response_template += `${response_string}
-<@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
+              <@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
             }
             if (!validate_guess(guess, userId)) {
               response_template = "Wrong Guess Format, try again!";
@@ -349,6 +353,7 @@ With this bot you will be able to play games to earn points and compete with you
 • **Wordle** - Daily word puzzle
 • **Chess** - Strategic board game (coming soon)
 • **Rock Paper Scissors** - Quick matches
+• **Coin Flip** - Test you luck 
 • More games coming soon!
 
 **Point System**
