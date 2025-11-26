@@ -150,7 +150,7 @@ app.post(
               <@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
             }
             if (!validate_guess(guess, userId)) {
-              response_template = "Wrong Guess Format, try again!";
+              response_template = "\nWrong Guess Format, try again!";
             }
           } else {
             let won_string = "";
