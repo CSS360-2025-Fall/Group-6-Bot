@@ -121,5 +121,14 @@
     "last_day_answer_generated": "11/25/2025",
     "wins": 0,
     "losses": 0
+  },
+  {
+    "userID": "430904445014900737",
+    "guesses": [],
+    "last_day_played": "11/25/2025",
+    "answer": "oozed",
+    "last_day_answer_generated": "11/25/2025",
+    "wins": 1,
+    "losses": 0
   }
 ]
