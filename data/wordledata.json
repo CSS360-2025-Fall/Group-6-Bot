@@ -130,5 +130,18 @@
     "last_day_answer_generated": "11/25/2025",
     "wins": 1,
     "losses": 0
+  },
+  {
+    "userID": "492101961060188181",
+    "guesses": [
+      "vowel",
+      "wheel",
+      "crawl"
+    ],
+    "last_day_played": "12/09/2025",
+    "answer": "crawl",
+    "last_day_answer_generated": "12/09/2025",
+    "wins": 1,
+    "losses": 0
   }
 ]
