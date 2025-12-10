@@ -29,6 +29,16 @@ const TEST_COMMAND = {
   contexts: [0, 1, 2],
 };
 
+const DAILY_COMMAND = {
+  name: "daily",
+  description: "Claim points daily",
+  type: 1,
+  integration_types: [0, 1],
+  contexts: [0, 1, 2],
+};
+
+
+
 // Command containing options
 const CHALLENGE_COMMAND = {
   name: "rps",
