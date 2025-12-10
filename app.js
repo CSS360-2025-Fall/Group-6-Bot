@@ -47,7 +47,11 @@ app.post(
     // Slash commands
     if (type === InteractionType.APPLICATION_COMMAND) {
       const { name } = data;
-
+if(name === "daily") {
+const userId = req.body.member.user.id;
+const guildId = req.body.guild_id;
+updateLeaderboard(guildId, userId, 50, 1);
+}
       // --- Coinflip command ---
 if (name === "coinflip") {
   try {
