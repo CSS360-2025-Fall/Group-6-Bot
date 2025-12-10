@@ -1,209 +1,1563 @@
-// wordle.js — interaction-friendly (ES6). Uses emoji board instead of image attachments.
-import fs from 'fs';
+const { MessageAttachment } = require('discord.js');
+const fs = require('fs');
+var csv = require('jquery-csv');
+const Canvas = require('canvas');
 
-// ---------- CONFIG ----------
-const DATA_FILE = 'data.csv';
-const MAX_TRIES = 6;
-const WORD_LEN = 5;
-
-// You can replace this with your own list; kept short for demo. Keep UPPERCASE.
-const answers = [
-  'APPLE', 'BRAIN', 'CRANE', 'PLANT', 'SMILE', 'GREEN', 'STEEL', 'MONEY', 'WATER', 'TRAIN',
-  'LIGHT', 'SOUND', 'TRUST', 'STONE', 'NURSE', 'HOUSE', 'VIDEO', 'VOICE', 'WATCH', 'WORLD',
-];
-
-// ---------- UTIL: CSV I/O ----------
-function ensureHeader(rows) {
-  if (rows.length === 0) {
-    rows[0] = [
-      'user',          // 0
-      'wordOfTheDay',  // 1
-      'canGuess',      // 2 (unused; legacy)
-      'lastGuessDate', // 3 (MM/DD/YYYY)
-      'guesses',       // 4 space-delimited uppercase guesses
-      'wins',          // 5 integer
-      'games',         // 6 integer
-      'hasCompletedToday', // 7 "true"/"false"
-    ];
-  }
-  return rows;
+function GetAnswer()
+{
+    //randomly select answer from list of 600 words
+    var j = Math.floor(Math.random() * answers.length);
+    return answers[j].toUpperCase();
 }
 
-function readCSV() {
-  try {
-    const raw = fs.readFileSync(DATA_FILE, 'utf8');
-    const rows = raw.split(/\r?\n/).filter(Boolean).map(line => line.split(','));
-    return ensureHeader(rows);
-  } catch {
-    return ensureHeader([]);
-  }
-}
+const ValidGuess = (guess) => 
+{
+    if(guess=== undefined){return false;}
+    else if (guess.length!=5){return false;}
+    //else if (!answers.includes(guess.toUpperCase())){return false;}
+    else{return true;}
+};
 
-function writeCSV(rows) {
-  const csv = rows.map(r => r.join(',')).join('\n');
-  fs.writeFileSync(DATA_FILE, csv, 'utf8');
-}
+const PlayedToday = (dateData) =>
+{
+    if(GetTodaysDate()==dateData){return true;}
+    else{return false;}
+};
+const GetTodaysDate = () =>
+{
+    var today = new Date();
+    var dd = String(today.getDate()).padStart(2, '0');
+    var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+    var yyyy = today.getFullYear();
+    return mm + '/' + dd + '/' + yyyy;
+};
+const AddSpace = (data) =>
+{
+    if(data.length==0){return "";}
+    else{return " ";}
+};
+const GetImage = (guessLetter,answerLetter, i) => 
+{
+    //letter is in word at same spot
+    if(guessLetter === undefined){return 0;}
+    //letter is in word at same spot
+    else if(guessLetter.charAt(i)==answerLetter.charAt(i)){return 1;}
+    //letter is in word at different spot
+    else if(answerLetter.includes(guessLetter.charAt(i))){return 2;}
+    //letter is not in word
+    else{return 3;}
+};
+function writeToCSVFile(newData)
+{
+    const filename = 'data.csv';
+    let csvContent = "data:text/csv;charset=utf-8," 
+        + newData.map(e => e.join(",")).join("\n");
 
-// ---------- DATE / GAME HELPERS ----------
-function todayStr() {
-  const d = new Date();
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const dd = String(d.getDate()).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  return `${mm}/${dd}/${yyyy}`;
+    fs.writeFile(filename, csvContent, err => 
+    {
+        if (err) {
+            console.log('Error writing to csv file', err);
+        } else {
+            console.log(`saved as ${filename}`);
+        }
+    });
 }
+async function LoadGame(msg, guesses, answer)
+{
+    const canvas = Canvas.createCanvas(330, 397);
+    const context = canvas.getContext('2d');
 
-function getAnswer() {
-  const j = Math.floor(Math.random() * answers.length);
-  return answers[j].toUpperCase();
-}
+    const background = await Canvas.loadImage('./images/BlankImage.png');
+    context.drawImage(background, 0, 0, canvas.width, canvas.height);
 
-function validGuess(guess) {
-  return typeof guess === 'string' && guess.length === WORD_LEN && /^[A-Za-z]+$/.test(guess);
-}
+    context.font = '42px Clear Sans, Helvetica Neue, Arial, sans-serif';
+    context.textAlign = 'center'
+    context.fillStyle = '#d7dadc';
 
-function splitGuesses(s) {
-  if (!s) return [];
-  return s.trim().split(/\s+/).filter(Boolean);
-}
+    const absentSquare = await Canvas.loadImage('./images/ColorAbsent.png');
+    const emptySquare = await Canvas.loadImage('./images/EmptySquare.png');
+    const greenSquare = await Canvas.loadImage('./images/GreenSquare.png');
+    const yellowSquare = await Canvas.loadImage('./images/YellowSquare.png');
+    let square = absentSquare;
 
-// Build a Wordle-like emoji board from guesses vs answer
-function buildBoard(guesses, answer) {
-  const rows = [];
-  for (let r = 0; r < MAX_TRIES; r++) {
-    const guess = guesses[r] || ''.padEnd(WORD_LEN, ' ');
-    let line = '';
-    for (let i = 0; i < WORD_LEN; i++) {
-      const g = guess[i] || ' ';
-      if (g === ' ') { line += '⬛'; continue; }
-      if (g === answer[i]) line += '🟩';
-      else if (answer.includes(g)) line += '🟨';
-      else line += '⬛';
+    let squareSize = 62;
+    let rowOffset = 0;
+    let buffer = 0;
+
+    for (let j = 0; j < 6; j++)
+    {
+        for (let i = 0; i < 5; i++)
+        {
+            const imageNumber = GetImage(guesses[j],answer,i);
+
+            if(imageNumber==0){square = emptySquare;}
+            else if(imageNumber==1){square = greenSquare;}
+            else if(imageNumber==2){square = yellowSquare;}
+            else if(imageNumber==3){square = absentSquare;}
+
+            context.drawImage(square, i*squareSize+buffer, rowOffset, squareSize, squareSize);
+            if(guesses[j] != undefined)
+            {
+                context.fillText(guesses[j].charAt(i), (squareSize/2)+buffer+squareSize*i, rowOffset+42);
+            }
+
+            buffer+=5;
+        }
+        buffer=0;
+        rowOffset+=squareSize+5;
     }
-    // show letters under the row for entered guesses
-    const letters = (guesses[r] || '').padEnd(WORD_LEN, ' ').split('').map(c => (c === ' ' ? '·' : c)).join('');
-    rows.push(`${line}  \`${letters}\``);
-  }
-  return rows.join('\n');
+
+    const attachment = new MessageAttachment(canvas.toBuffer(), 'wordle.png');
+
+    msg.reply({files: [attachment] });  
+}
+async function Guess(msg,guesses,newGuess, answer)
+{
+    const canvas = Canvas.createCanvas(330, 397);
+    const context = canvas.getContext('2d');
+
+    const background = await Canvas.loadImage('./images/BlankImage.png');
+    context.drawImage(background, 0, 0, canvas.width, canvas.height);
+
+    context.font = '42px Clear Sans, Helvetica Neue, Arial, sans-serif';
+    context.textAlign = 'center'
+    context.fillStyle = '#d7dadc';
+    
+    //for debuging purposes
+    console.log("Answer " + answer);
+    console.log("newGuess " + newGuess);
+
+    const absentSquare = await Canvas.loadImage('./images/ColorAbsent.png');
+    const emptySquare = await Canvas.loadImage('./images/EmptySquare.png');
+    const greenSquare = await Canvas.loadImage('./images/GreenSquare.png');
+    const yellowSquare = await Canvas.loadImage('./images/YellowSquare.png');
+    let square = absentSquare;
+
+    let squareSize = 62;
+    let rowOffset = 0;
+    let buffer = 0;
+
+    if(guesses=="")
+    {
+        guesses[0] = newGuess;
+    }
+    else
+    {
+        guesses.push(newGuess);
+    }
+
+    for (let j = 0; j < 6; j++)
+    {
+        for (let i = 0; i < 5; i++)
+        {
+            const imageNumber = GetImage(guesses[j],answer,i);
+
+            if(imageNumber==0){square = emptySquare;}
+            else if(imageNumber==1){square = greenSquare;}
+            else if(imageNumber==2){square = yellowSquare;}
+            else if(imageNumber==3){square = absentSquare;}
+
+            context.drawImage(square, i*squareSize+buffer, rowOffset, squareSize, squareSize);
+            if(guesses[j] != undefined)
+            {
+                context.fillText(guesses[j].charAt(i), (squareSize/2)+buffer+squareSize*i, rowOffset+45);
+            }
+
+            buffer+=5;
+        }
+
+        buffer=0;
+        rowOffset+=squareSize+5;
+    }
+
+    const attachment = new MessageAttachment(canvas.toBuffer(), 'wordle.png');
+
+    msg.reply({files: [attachment] });
+}
+function LoadNewWordle(msg)
+{
+    fs.readFile('data.csv', 'UTF-8', (err, fileContent) => 
+    {
+        if (err) { console.log(err) }
+        csv.toArrays(fileContent, {}, (err, data) => 
+        {
+            if (err) { console.log(err) }
+            console.log(data.length);
+            if(data.length==0)
+            {
+                console.log("no data");
+                data[0]=[
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'user',
+                    'wordOfTheDay',
+                    'canGuess',
+                    'lastGuessDate',
+                    'guesses',
+                    'wins',
+                    'games',
+                    'hasCompletedToday'
+                  ];
+            }
+            console.log(data.length);
+
+            for (let i = 1, len = data.length; i < len; i++) 
+            {
+                console.log(data[i]);
+                if(data[i][0]==msg.author.id)
+                {
+                    if(PlayedToday(data[i][3]))
+                    {
+                        if(!msg.content.includes("ISAIDSTARTANEWGAME"))
+                        {
+                            msg.reply("You have already played a game, please come back tomorrow");
+                            return;
+                        }
+                    }
+                    
+                    //GetNewAnswer
+                    data[i][1] = GetAnswer();
+                    //update date
+                    data[i][3] = GetTodaysDate();
+                    //clear guesses
+                    data[i][4] = "";
+                    //remove game completion status
+                    data[i][8] = false;
+
+                    //update csv file
+                    writeToCSVFile(data);
+                    LoadGame(msg,data[i][4],data[i][1]);
+                    return;
+                }
+            }
+            
+            //create new entry
+            data.push([msg.author.id,GetAnswer(),'false',GetTodaysDate(),,0,0,0,false]);
+            writeToCSVFile(data);
+            LoadGame(msg,"","");
+    })})
+}
+function PlayWordle(msg)
+{
+    fs.readFile('data.csv', 'UTF-8', (err, fileContent) => 
+    {
+        if (err) { console.log(err) }
+        csv.toArrays(fileContent, {}, (err, data) => 
+        {
+            if (err) { console.log(err) }
+            if(data.length==0)
+            {
+                data[0]=[
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'data:text/csv;charset=utf-8',
+                    'user',
+                    'wordOfTheDay',
+                    'canGuess',
+                    'lastGuessDate',
+                    'guesses',
+                    'wins',
+                    'games',
+                    'hasCompletedToday'
+                  ];
+            }
+            for (let i = 1, len = data.length; i < len; i++) 
+            {
+
+                if(data[i][0]==msg.author.id)
+                {
+                    if(data[i][8]=="true")
+                    {
+                        msg.reply("You have already completed a game today, Come back tomorrow");
+                        return;
+                    }
+
+                    var guess = msg.content.split(" ")[1];
+                    
+                    //Guess checks
+                    if(!ValidGuess(guess))
+                    {
+                        msg.reply("Guesses must be a valid 5 letter word ");
+                        return;
+                    }
+
+                    //clean data and update file
+                    var guesses = data[i][4].split(" ");
+                    guess = guess.toUpperCase();
+                    data[i][4] = data[i][4] +AddSpace(data[i][4])+ guess;
+                    writeToCSVFile(data);
+
+                    Guess(msg,guesses, guess, data[i][1]);
+
+                    //check to see if guess and answer match
+                    for (var c=0; c<guess.length; c++) {
+                        if (guess.charCodeAt(c) != data[i][1].charCodeAt(c)) {
+                            if(guesses.length===5)
+                            {
+                                data[i][8]=true;
+                                data[i][7]+=1;
+                                writeToCSVFile(data);
+                                msg.reply("Game over");
+                            }
+                            return;
+                        }
+                    }
+
+                    data[i][8]=true;
+                    data[i][6]+=1;
+                    data[i][7]+=1;
+                    writeToCSVFile(data);
+                    msg.reply("Congradulations! You guessed the word "+data[i][1]+" in "+(guesses.length+1)+ " tries!")
+                
+                    return;
+                }
+            }
+            msg.reply("You have not started a game yet today")
+        })})
+}
+function ShowWordleStats(msg)
+{
+    fs.readFile('data.csv', 'UTF-8', (err, fileContent) => 
+    {
+        if (err) { console.log(err) }
+        csv.toArrays(fileContent, {}, (err, data) => 
+        {
+            if (err) { console.log(err) }
+            for (let i = 1, len = data.length; i < len; i++) 
+            {
+                if(data[i][0]==msg.author.id)
+                {
+                    var wins = data[i][6];
+                    var games = data[i][7];
+                    var result = Math.round((wins / games) * 100);
+
+                    msg.reply("Stats: \nPlayed : "+games+"\nWin % : "+result);
+                
+                    return;
+                }
+            }
+
+            data[data.length] = [msg.author.id,'','false','','','0','0']
+            msg.reply("Stats: \nPlayed : "+0+"\nWin % : "+0);
+            writeToCSVFile(data);
+        })})
 }
 
-// Compare two uppercase strings for exact match
-function isExact(guess, answer) {
-  if (!guess || !answer) return false;
-  if (guess.length !== answer.length) return false;
-  for (let i = 0; i < guess.length; i++) {
-    if (guess.charCodeAt(i) !== answer.charCodeAt(i)) return false;
-  }
-  return true;
-}
+module.exports = { LoadNewWordle, PlayWordle, ShowWordleStats};
 
-// ---------- CORE LOOKUP / MUTATION ----------
-function findOrCreateUserRow(rows, userId) {
-  // header at index 0
-  for (let i = 1; i < rows.length; i++) {
-    if (rows[i][0] === userId) return { idx: i, row: rows[i] };
-  }
-  const fresh = [userId, '', 'false', '', '', '0', '0', 'false'];
-  rows.push(fresh);
-  return { idx: rows.length - 1, row: fresh };
-}
+answers = ['ABUSE', 
 
-// ---------- PUBLIC API (for app.js) ----------
-export async function startWordle(userId) {
-  const rows = readCSV();
-  const { idx, row } = findOrCreateUserRow(rows, userId);
+'ADULT', 
 
-  // If played today and completed, block restart
-  const today = todayStr();
-  const hasCompleted = String(row[7]) === 'true';
-  if (row[3] === today && hasCompleted) {
-    return { content: `You already completed today's game, <@${userId}>. Come back tomorrow!` };
-  }
+'AGENT', 
 
-  // Start/Reset today's game
-  row[1] = getAnswer();     // wordOfTheDay
-  row[3] = today;           // lastGuessDate
-  row[4] = '';              // guesses (space separated)
-  row[7] = 'false';         // hasCompletedToday
-  // Increment games only when a game actually starts (aligns with your old logic)
-  row[6] = String(Number(row[6] || '0') + 1);
+'ANGER', 
 
-  rows[idx] = row;
-  writeCSV(rows);
+'APPLE', 
 
-  const board = buildBoard([], row[1]);
-  return {
-    content:
-      `**Wordle** — ${today}
-<@${userId}>, game started! Use \`/dwordle guess <word>\`.
-\`\`\`
-- ${WORD_LEN} letters
-- ${MAX_TRIES} tries
-\`\`\`
-${board}`
-  };
-}
+'AWARD', 
 
-export async function guessWordle(userId, guessRaw) {
-  const guess = (guessRaw || '').trim().toUpperCase();
-  const rows = readCSV();
-  const { idx, row } = findOrCreateUserRow(rows, userId);
+'BASIS', 
 
-  // No active game today?
-  const today = todayStr();
-  if (row[3] !== today || !row[1]) {
-    return { content: `No active game for today, <@${userId}>. Start one with \`/dwordle start\`.` };
-  }
+'BEACH', 
 
-  if (String(row[7]) === 'true') {
-    return { content: `You've already completed today's game, <@${userId}>. Come back tomorrow!` };
-  }
+'BIRTH', 
 
-  if (!validGuess(guess)) {
-    return { content: `Guesses must be a valid ${WORD_LEN}-letter word (A–Z).` };
-  }
+'BLOCK', 
 
-  const answer = row[1];
-  const guesses = splitGuesses(row[4]);
+'BLOOD', 
 
-  if (guesses.length >= MAX_TRIES) {
-    row[7] = 'true'; // mark complete
-    writeCSV(rows);
-    const board = buildBoard(guesses, answer);
-    return { content: `Game over — out of tries!\n${board}\nAnswer: **${answer}**` };
-  }
+'BOARD', 
 
-  // Add guess
-  guesses.push(guess);
-  row[4] = guesses.join(' ');
+'BRAIN', 
 
-  if (isExact(guess, answer)) {
-    row[7] = 'true';
-    row[5] = String(Number(row[5] || '0') + 1); // wins++
-    writeCSV(rows);
-    const board = buildBoard(guesses, answer);
-    return { content: `🎉 **Congratulations!** You guessed **${answer}** in **${guesses.length}** tries.\n${board}` };
-  }
+'BREAD', 
 
-  // If that was the last attempt, mark game over
-  if (guesses.length >= MAX_TRIES) {
-    row[7] = 'true';
-    writeCSV(rows);
-    const board = buildBoard(guesses, answer);
-    return { content: `Game over — out of tries!\n${board}\nAnswer: **${answer}**` };
-  }
+'BREAK', 
 
-  // Otherwise, persist and show updated board
-  writeCSV(rows);
-  const board = buildBoard(guesses, answer);
-  return { content: `${board}\nGuess **${guesses.length}/${MAX_TRIES}**. Use \`/dwordle guess <word>\`.` };
-}
+'BROWN', 
 
-export async function getStats(userId) {
-  const rows = readCSV();
-  const { row } = findOrCreateUserRow(rows, userId);
-  const wins = Number(row[5] || '0');
-  const games = Number(row[6] || '0');
-  const winPct = games > 0 ? Math.round((wins / games) * 100) : 0;
-  return { content: `**Stats for <@${userId}>**\nPlayed: ${games}\nWins: ${wins}\nWin %: ${winPct}` };
-}
+'BUYER', 
+
+'CAUSE', 
+
+'CHAIN', 
+
+'CHAIR', 
+
+'CHEST', 
+
+'CHIEF', 
+
+'CHILD', 
+
+'CHINA', 
+
+'CLAIM', 
+
+'CLASS', 
+
+'CLOCK', 
+
+'COACH', 
+
+'COAST', 
+
+'COURT', 
+
+'COVER', 
+
+'CREAM', 
+
+'CRIME', 
+
+'CROSS', 
+
+'CROWD', 
+
+'CROWN', 
+
+'CYCLE', 
+
+'DANCE', 
+
+'DEATH', 
+
+'DEPTH', 
+
+'DOUBT', 
+
+'DRAFT', 
+
+'DRAMA', 
+
+'DREAM', 
+
+'DRESS', 
+
+'DRINK', 
+
+'DRIVE', 
+
+'EARTH', 
+
+'ENEMY', 
+
+'ENTRY', 
+
+'ERROR', 
+
+'EVENT', 
+
+'FAITH', 
+
+'FAULT', 
+
+'FIELD', 
+
+'FIGHT', 
+
+'FINAL', 
+
+'FLOOR', 
+
+'FOCUS', 
+
+'FORCE', 
+
+'FRAME', 
+
+'FRANK', 
+
+'FRONT', 
+
+'FRUIT', 
+
+'GLASS', 
+
+'GRANT', 
+
+'GRASS', 
+
+'GREEN', 
+
+'GROUP', 
+
+'GUIDE', 
+
+'HEART', 
+
+'HENRY', 
+
+'HORSE', 
+
+'HOTEL', 
+
+'HOUSE', 
+
+'IMAGE', 
+
+'INDEX', 
+
+'INPUT', 
+
+'ISSUE', 
+
+'JAPAN', 
+
+'JONES', 
+
+'JUDGE', 
+
+'KNIFE', 
+
+'LAURA', 
+
+'LAYER', 
+
+'LEVEL', 
+
+'LEWIS', 
+
+'LIGHT', 
+
+'LIMIT', 
+
+'LUNCH', 
+
+'MAJOR', 
+
+'MARCH', 
+
+'MATCH', 
+
+'METAL', 
+
+'MODEL', 
+
+'MONEY', 
+
+'MONTH', 
+
+'MOTOR', 
+
+'MOUTH', 
+
+'MUSIC', 
+
+'NIGHT', 
+
+'NOISE', 
+
+'NORTH', 
+
+'NOVEL', 
+
+'NURSE', 
+
+'OFFER', 
+
+'ORDER', 
+
+'OTHER', 
+
+'OWNER', 
+
+'PANEL', 
+
+'PAPER', 
+
+'PARTY', 
+
+'PEACE', 
+
+'PETER', 
+
+'PHASE', 
+
+'PHONE', 
+
+'PIECE', 
+
+'PILOT', 
+
+'PITCH', 
+
+'PLACE', 
+
+'PLANE', 
+
+'PLANT', 
+
+'PLATE', 
+
+'POINT', 
+
+'POUND', 
+
+'POWER', 
+
+'PRESS', 
+
+'PRICE', 
+
+'PRIDE', 
+
+'PRIZE', 
+
+'PROOF', 
+
+'QUEEN', 
+
+'RADIO', 
+
+'RANGE', 
+
+'RATIO', 
+
+'REPLY', 
+
+'RIGHT', 
+
+'RIVER', 
+
+'ROUND', 
+
+'ROUTE', 
+
+'RUGBY', 
+
+'SCALE', 
+
+'SCENE', 
+
+'SCOPE', 
+
+'SCORE', 
+
+'SENSE', 
+
+'SHAPE', 
+
+'SHARE', 
+
+'SHEEP', 
+
+'SHEET', 
+
+'SHIFT', 
+
+'SHIRT', 
+
+'SHOCK', 
+
+'SIGHT', 
+
+'SIMON', 
+
+'SKILL', 
+
+'SLEEP', 
+
+'SMILE', 
+
+'SMITH', 
+
+'SMOKE', 
+
+'SOUND', 
+
+'SOUTH', 
+
+'SPACE', 
+
+'SPEED', 
+
+'SPITE', 
+
+'SPORT', 
+
+'SQUAD', 
+
+'STAFF', 
+
+'STAGE', 
+
+'START', 
+
+'STATE', 
+
+'STEAM', 
+
+'STEEL', 
+
+'STOCK', 
+
+'STONE', 
+
+'STORE', 
+
+'STUDY', 
+
+'STUFF', 
+
+'STYLE', 
+
+'SUGAR', 
+
+'TABLE', 
+
+'TASTE', 
+
+'TERRY', 
+
+'THEME', 
+
+'THING', 
+
+'TITLE', 
+
+'TOTAL', 
+
+'TOUCH', 
+
+'TOWER', 
+
+'TRACK', 
+
+'TRADE', 
+
+'TRAIN', 
+
+'TREND', 
+
+'TRIAL', 
+
+'TRUST', 
+
+'TRUTH', 
+
+'UNCLE', 
+
+'UNION', 
+
+'UNITY', 
+
+'VALUE', 
+
+'VIDEO', 
+
+'VISIT', 
+
+'VOICE', 
+
+'WASTE', 
+
+'WATCH', 
+
+'WATER', 
+
+'WHILE', 
+
+'WHITE', 
+
+'WHOLE', 
+
+'WOMAN', 
+
+'WORLD', 
+
+'YOUTH', 
+
+'ALCON', 
+
+'AUGHT', 
+
+'HELLA', 
+
+'ONE’S', 
+
+'OUGHT', 
+
+'THAME', 
+
+'THERE', 
+
+'THINE', 
+
+'THINE', 
+
+'WHERE', 
+
+'WHICH', 
+
+'WHOSE', 
+
+'WHOSO', 
+
+'YOURS', 
+
+'YOURS', 
+
+'ADMIT', 
+
+'ADOPT', 
+
+'AGREE', 
+
+'ALLOW', 
+
+'ALTER', 
+
+'APPLY', 
+
+'ARGUE', 
+
+'ARISE', 
+
+'AVOID', 
+
+'BEGIN', 
+
+'BLAME', 
+
+'BREAK', 
+
+'BRING', 
+
+'BUILD', 
+
+'BURST', 
+
+'CARRY', 
+
+'CATCH', 
+
+'CAUSE', 
+
+'CHECK', 
+
+'CLAIM', 
+
+'CLEAN', 
+
+'CLEAR', 
+
+'CLIMB', 
+
+'CLOSE', 
+
+'COUNT', 
+
+'COVER', 
+
+'CROSS', 
+
+'DANCE', 
+
+'DOUBT', 
+
+'DRINK', 
+
+'DRIVE', 
+
+'ENJOY', 
+
+'ENTER', 
+
+'EXIST', 
+
+'FIGHT', 
+
+'FOCUS', 
+
+'FORCE', 
+
+'GUESS', 
+
+'IMPLY', 
+
+'ISSUE', 
+
+'JUDGE', 
+
+'LAUGH', 
+
+'LEARN', 
+
+'LEAVE', 
+
+'LET’S', 
+
+'LIMIT', 
+
+'MARRY', 
+
+'MATCH', 
+
+'OCCUR', 
+
+'OFFER', 
+
+'ORDER', 
+
+'PHONE', 
+
+'PLACE', 
+
+'POINT', 
+
+'PRESS', 
+
+'PROVE', 
+
+'RAISE', 
+
+'REACH', 
+
+'REFER', 
+
+'RELAX', 
+
+'SERVE', 
+
+'SHALL', 
+
+'SHARE', 
+
+'SHIFT', 
+
+'SHOOT', 
+
+'SLEEP', 
+
+'SOLVE', 
+
+'SOUND', 
+
+'SPEAK', 
+
+'SPEND', 
+
+'SPLIT', 
+
+'STAND', 
+
+'START', 
+
+'STATE', 
+
+'STICK', 
+
+'STUDY', 
+
+'TEACH', 
+
+'THANK', 
+
+'THINK', 
+
+'THROW', 
+
+'TOUCH', 
+
+'TRAIN', 
+
+'TREAT', 
+
+'TRUST', 
+
+'VISIT', 
+
+'VOICE', 
+
+'WASTE', 
+
+'WATCH', 
+
+'WORRY', 
+
+'WOULD', 
+
+'WRITE', 
+
+'ABOVE', 
+
+'ACUTE', 
+
+'ALIVE', 
+
+'ALONE', 
+
+'ANGRY', 
+
+'AWARE', 
+
+'AWFUL', 
+
+'BASIC', 
+
+'BLACK', 
+
+'BLIND', 
+
+'BRAVE', 
+
+'BRIEF', 
+
+'BROAD', 
+
+'BROWN', 
+
+'CHEAP', 
+
+'CHIEF', 
+
+'CIVIL', 
+
+'CLEAN', 
+
+'CLEAR', 
+
+'CLOSE', 
+
+'CRAZY', 
+
+'DAILY', 
+
+'DIRTY', 
+
+'EARLY', 
+
+'EMPTY', 
+
+'EQUAL', 
+
+'EXACT', 
+
+'EXTRA', 
+
+'FAINT', 
+
+'FALSE', 
+
+'FIFTH', 
+
+'FINAL', 
+
+'FIRST', 
+
+'FRESH', 
+
+'FRONT', 
+
+'FUNNY', 
+
+'GIANT', 
+
+'GRAND', 
+
+'GREAT', 
+
+'GREEN', 
+
+'GROSS', 
+
+'HAPPY', 
+
+'HARSH', 
+
+'HEAVY', 
+
+'HUMAN', 
+
+'IDEAL', 
+
+'INNER', 
+
+'JOINT', 
+
+'LARGE', 
+
+'LEGAL', 
+
+'LEVEL', 
+
+'LIGHT', 
+
+'LOCAL', 
+
+'LOOSE', 
+
+'LUCKY', 
+
+'MAGIC', 
+
+'MAJOR', 
+
+'MINOR', 
+
+'MORAL', 
+
+'NAKED', 
+
+'NASTY', 
+
+'NAVAL', 
+
+'OTHER', 
+
+'OUTER', 
+
+'PLAIN', 
+
+'PRIME', 
+
+'PRIOR', 
+
+'PROUD', 
+
+'QUICK', 
+
+'QUIET', 
+
+'RAPID', 
+
+'READY', 
+
+'RIGHT', 
+
+'ROMAN', 
+
+'ROUGH', 
+
+'ROUND', 
+
+'ROYAL', 
+
+'RURAL', 
+
+'SHARP', 
+
+'SHEER', 
+
+'SHORT', 
+
+'SILLY', 
+
+'SIXTH', 
+
+'SMALL', 
+
+'SMART', 
+
+'SOLID', 
+
+'SORRY', 
+
+'SPARE', 
+
+'STEEP', 
+
+'STILL', 
+
+'SUPER', 
+
+'SWEET', 
+
+'THICK', 
+
+'THIRD', 
+
+'TIGHT', 
+
+'TOTAL', 
+
+'TOUGH', 
+
+'UPPER', 
+
+'UPSET', 
+
+'URBAN', 
+
+'USUAL', 
+
+'VAGUE', 
+
+'VALID', 
+
+'VITAL', 
+
+'WHITE', 
+
+'WHOLE', 
+
+'WRONG', 
+
+'YOUNG', 
+
+'AFORE', 
+
+'AFTER', 
+
+'BOTHE', 
+
+'OTHER', 
+
+'SINCE', 
+
+'SLASH', 
+
+'UNTIL', 
+
+'WHERE', 
+
+'WHILE', 
+
+'ABACK', 
+
+'ABAFT', 
+
+'ABOON', 
+
+'ABOUT', 
+
+'ABOVE', 
+
+'ACCEL', 
+
+'ADOWN', 
+
+'AFOOT', 
+
+'AFORE', 
+
+'AFOUL', 
+
+'AFTER', 
+
+'AGAIN', 
+
+'AGAPE', 
+
+'AGOGO', 
+
+'AGONE', 
+
+'AHEAD', 
+
+'AHULL', 
+
+'ALIFE', 
+
+'ALIKE', 
+
+'ALINE', 
+
+'ALOFT', 
+
+'ALONE', 
+
+'ALONG', 
+
+'ALOOF', 
+
+'ALOUD', 
+
+'AMISS', 
+
+'AMPLY', 
+
+'AMUCK', 
+
+'APACE', 
+
+'APART', 
+
+'APTLY', 
+
+'AREAR', 
+
+'ASIDE', 
+
+'ASKEW', 
+
+'AWFUL', 
+
+'BADLY', 
+
+'BALLY', 
+
+'BELOW', 
+
+'CANNY', 
+
+'CHEAP', 
+
+'CLEAN', 
+
+'CLEAR', 
+
+'COYLY', 
+
+'DAILY', 
+
+'DIMLY', 
+
+'DIRTY', 
+
+'DITTO', 
+
+'DRILY', 
+
+'DRYLY', 
+
+'DULLY', 
+
+'EARLY', 
+
+'EXTRA', 
+
+'FALSE', 
+
+'FATLY', 
+
+'FEYLY', 
+
+'FIRST', 
+
+'FITLY', 
+
+'FORTE', 
+
+'FORTH', 
+
+'FRESH', 
+
+'FULLY', 
+
+'FUNNY', 
+
+'GAILY', 
+
+'GAYLY', 
+
+'GODLY', 
+
+'GREAT', 
+
+'HAPLY', 
+
+'HEAVY', 
+
+'HELLA', 
+
+'HENCE', 
+
+'HOTLY', 
+
+'ICILY', 
+
+'INFRA', 
+
+'INTL.', 
+
+'JILDI', 
+
+'JOLLY', 
+
+'LAXLY', 
+
+'LENTO', 
+
+'LIGHT', 
+
+'LOWLY', 
+
+'MADLY', 
+
+'MAYBE', 
+
+'NEVER', 
+
+'NEWLY', 
+
+'NOBLY', 
+
+'ODDLY', 
+
+'OFTEN', 
+
+'OTHER', 
+
+'OUGHT', 
+
+'PARTY', 
+
+'PIANO', 
+
+'PLAIN', 
+
+'PLONK', 
+
+'PLUMB', 
+
+'PRIOR', 
+
+'QUEER', 
+
+'QUICK', 
+
+'QUITE', 
+
+'RAMEN', 
+
+'RAPID', 
+
+'REDLY', 
+
+'RIGHT', 
+
+'ROUGH', 
+
+'ROUND', 
+
+'SADLY', 
+
+'SECUS', 
+
+'SELLY', 
+
+'SHARP', 
+
+'SHEER', 
+
+'SHILY', 
+
+'SHORT', 
+
+'SHYLY', 
+
+'SILLY', 
+
+'SINCE', 
+
+'SLEEK', 
+
+'SLYLY', 
+
+'SMALL', 
+
+'SOUND', 
+
+'SPANG', 
+
+'SRSLY', 
+
+'STARK', 
+
+'STILL', 
+
+'STONE', 
+
+'STOUR', 
+
+'SUPER', 
+
+'TALLY', 
+
+'TANTO', 
+
+'THERE', 
+
+'THICK', 
+
+'TIGHT', 
+
+'TODAY', 
+
+'TOMOZ', 
+
+'TRULY', 
+
+'TWICE', 
+
+'UNDER', 
+
+'UTTER', 
+
+'VERRY', 
+
+'WANLY', 
+
+'WETLY', 
+
+'WHERE', 
+
+'WRONG', 
+
+'WRYLY', 
+
+'ABAFT', 
+
+'ABOON', 
+
+'ABOUT', 
+
+'ABOVE', 
+
+'ADOWN', 
+
+'AFORE', 
+
+'AFTER', 
+
+'ALONG', 
+
+'ALOOF', 
+
+'AMONG', 
+
+'BELOW', 
+
+'CIRCA', 
+
+'CROSS', 
+
+'FURTH', 
+
+'MINUS', 
+
+'NEATH', 
+
+'ROUND', 
+
+'SINCE', 
+
+'SPITE', 
+
+'UNDER',]; 

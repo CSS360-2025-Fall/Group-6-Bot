@@ -1,9 +1,8 @@
-import "dotenv";
+import "dotenv/config";
 import { getRPSChoices } from "./rps.js";
 import { capitalize, InstallGlobalCommands } from "./utils.js";
-import { cfCommand } from "./cf.js";   // <-- your coinflip command object
-
-import fs from "fs"; 
+import { cfCommand } from "./cf.js";
+import fs from "fs";
 
 // Get the game choices from game.js
 function createCommandChoices() {
@@ -73,8 +72,7 @@ const LEADERBOARD_COMMAND = {
 
 const UPDATE_LEADERBOARD_COMMAND = {
   name: "update_leaderboard",
-  description:
-    "Test command for updating leaderboard without game",
+  description: "Test command for updating leaderboard without game",
   options: [
     {
       type: 3,
@@ -112,7 +110,7 @@ const WORDLE_COMMAND = {
       options: [
         {
           type: 3,
-          name: "word",
+          name: "Type Your Guess:",
           description: "Your guess",
           required: true,
         }
@@ -139,6 +137,23 @@ const INFO_COMMAND = {
   contexts: [0, 1, 2],
 };
 
+// ADD THIS NEW COMMAND
+const PLAY_COMMAND = {
+  name: "play",
+  description: "Play music from YouTube",
+  type: 1,
+  options: [
+    {
+      type: 3,
+      name: "song",
+      description: "Song name or YouTube URL",
+      required: true,
+    },
+  ],
+  integration_types: [0, 1],
+  contexts: [0, 1, 2],
+};
+
 const ALL_COMMANDS = [
   TEST_COMMAND,
   CHALLENGE_COMMAND,
@@ -147,9 +162,8 @@ const ALL_COMMANDS = [
   WORDLE_COMMAND,
   HELP_COMMAND,
   INFO_COMMAND,
-  cfCommand.data.toJSON(),  
+  cfCommand.data.toJSON(),
+  PLAY_COMMAND, // ADD THIS LINE
 ];
 
-// Register globally
 InstallGlobalCommands(process.env.APP_ID, ALL_COMMANDS);
-

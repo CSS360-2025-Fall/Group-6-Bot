@@ -1,12 +1,17 @@
 [
   {
     "user": "492101961060188181",
-    "points": 2400,
-    "games_played": 4
+    "points": 1600,
+    "games_played": 9
   },
   {
     "user": "430904445014900737",
-    "points": 3600,
-    "games_played": 10
+    "points": 9100,
+    "games_played": 13
+  },
+  {
+    "user": "566737327406186526",
+    "points": 3500,
+    "games_played": 4
   }
 ]
