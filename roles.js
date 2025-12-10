@@ -51,11 +51,11 @@ export async function updateRoles(guildId, userId) {
   // If the user already has that role no need to update
   if (member.roles.cache.some(r => r.name === newRoleName)) return;
 
-  // Remove old leaderboard roles
+  // Remove old leaderboard role
   const rolesToRemove = member.roles.cache.filter(r => roleThresholds.some(t => t.roleName === r.name));
   await member.roles.remove(rolesToRemove);
 
-  // Find or create the role
+  // Find the or create it if it doesn't exist
   let role = guild.roles.cache.find(r => r.name === newRoleName);
   if (!role) {
     role = await guild.roles.create({
@@ -65,8 +65,25 @@ export async function updateRoles(guildId, userId) {
     });
   }
 
-  // Add the new role
+  // Add the new role to the user
   await member.roles.add(role);
+
+  // Send message in the server to notify user of role change
+  // If they went down a role we will give a demotion notification
+  const channel = guild.systemChannel;
+  if (channel) {
+    const wentDown = roleThresholds.findIndex(t => t.roleName === newRoleName) <
+    roleThresholds.findIndex(t => t.roleName === rolesToRemove.first().name);
+    let message = '';
+    if (wentDown) {
+      message = `<@${userId}>, you have been demoted to **${newRoleName}**.
+      \n😞 Keep playing to climb back up the leaderboard!`
+    } else {
+      message = `Congratulations <@${userId}>! You ranked up to **${newRoleName}**!
+      \n🎉 Keep up the great work!`;
+    }
+    channel.send(message);
+  }
 }
 
 client.login(process.env.DISCORD_TOKEN)
