@@ -12,3 +12,9 @@ Earning enough points will grant you access to rewards you can use within the se
 
 ## Rewards
 * Roles
+
+## Leaderboard
+Use the leaderboard command to see who has the most points!
+
+## Getting started
+Get started by claiming points every day with the /daily command.
