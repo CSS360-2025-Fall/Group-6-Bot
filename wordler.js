@@ -112,7 +112,6 @@ export function get_date() {
 
 
 export function validate_guess(guess, userId) {
-    let arr = [];
     if (!fs.existsSync(wordle_file)) {
         // If not, create an empty wordle file.
         fs.writeFileSync(wordle_file, JSON.stringify([], null, 2), 'utf8');
@@ -144,16 +143,14 @@ export function validate_guess(guess, userId) {
             user.guesses.push(guess);
             fs.writeFileSync(wordle_file, JSON.stringify(users, null, 2));
         }
-        arr = [false, error_response];
-        return arr;
+        return [false, error_response];
     }
     if (guess == user.answer) {
         user.wins += 1;
     }
     user.guesses.push(guess);
     fs.writeFileSync(wordle_file, JSON.stringify(users, null, 2));
-    arr = [true, null];
-    return arr;
+    return [true, null];
 }
 
 function word_in_list(guess) {
