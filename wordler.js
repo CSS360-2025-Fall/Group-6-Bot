@@ -250,7 +250,7 @@ export function get_streak(userId) {
 
     // Check if user exists
     let user = users.find(user => user.userID === userId);
-    return "\nCurrent Streak: " + user.streak;
+    return "\n‼️💥Your Current Streak: " + user.streak;
 }
 
 export function add_streak_count(userId) {

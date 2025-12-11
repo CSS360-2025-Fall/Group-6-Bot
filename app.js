@@ -168,17 +168,15 @@ app.post(
             clear_guesses(userId);
             let won_string = "";
             if (game_won(userId)) {
-              won_string += "won!";
+              won_string += "won!🤙";
             } else {
               clear_streak_count(userId);
-              won_string += "lost!";
+              won_string += "lost!👎";
             }
             response_template += `
 <@${userId}>: You've already completed the Wordle Today.
-You ${won_string} The answer was ${answer} 
-Play again tommorow.
-
-${get_streak(userId)}`
+You ${won_string} The answer was 👉${answer} 
+Play again tommorow.`
           }
           const board = await load_board(userId);
 
