@@ -139,19 +139,18 @@ updateLeaderboard(guildId, userId, 50, 1);
         if (subcommand === "guess") {
           // Save the Guess & Confirm if it's a valid guess.
           const guess = req.body.data.options[0].options[0].value.toLowerCase();
-          let response_string = "";
           let response_template = "";
           let points = 2000;
           const answer = get_answer(userId);
           if (!already_played(userId)) {
             if (guess.toLowerCase() === answer.toLowerCase()) {
               points = points - (get_list_of_guesses(userId).length * 200); // Points decrease by 200 for each guess taken
-              response_template += `${response_string}
+              response_template += `
 ✅ Correct! The word was "${answer}". \nCongratulations <@${userId}>! 🎉\nYou earned ${points} points for guessing the word correctly.`;
               updateLeaderboard(req.body.guild_id, userId, points, 1); // Add points for winning and increment games played
               console.log(`User ${userId} earned ${points} points for guessing the word correctly.`);
             } else {
-              response_template += `${response_string}
+              response_template += `
 <@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
             }
             if (!validate_guess(guess, userId)[0]) {
