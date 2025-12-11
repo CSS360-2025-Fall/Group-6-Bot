@@ -1,156 +1,35 @@
 [
   {
-    "userID": "5",
-    "guesses": [
-      "guess"
-    ],
-    "last_day_played": null,
-    "answer": "resaw",
-    "last_day_answer_generated": "11/21/2025",
-    "wins": 0,
-    "losses": 0
-  },
-  {
-    "userID": "4",
+    "userID": "5666186526",
     "guesses": [],
-    "last_day_played": null,
-    "answer": "yawns",
-    "last_day_answer_generated": "11/22/2025",
-    "wins": 0,
-    "losses": 0
-  },
-  {
-    "userID": "3",
-    "guesses": [],
-    "last_day_played": null,
-    "answer": "sprig",
-    "last_day_answer_generated": "11/22/2025",
-    "wins": 0,
-    "losses": 0
-  },
-  {
-    "userID": "2",
-    "guesses": [
-      "slate",
-      "white",
-      "aider",
-      "guess"
-    ],
-    "last_day_played": "11/23/2025",
-    "answer": "bough",
-    "last_day_answer_generated": "11/23/2025",
-    "wins": 0,
-    "losses": 1
-  },
-  {
-    "userID": "1",
-    "guesses": [
-      "start",
-      "stomp",
-      "stuck",
-      "villi"
-    ],
-    "last_day_played": "11/23/2025",
-    "answer": "rites",
-    "last_day_answer_generated": "11/23/2025",
+    "last_day_played": "12/10/2025",
+    "answer": "bible",
+    "last_day_answer_generated": "12/10/2025",
     "wins": 1,
-    "losses": 0
+    "losses": 0,
+    "streak": 2,
+    "didwin": true
   },
   {
-    "userID": "406186526",
+    "userID": "566706186526",
     "guesses": [],
-    "last_day_played": "11/25/2025",
-    "answer": "hadst",
-    "last_day_answer_generated": "11/25/2025",
-    "wins": 0,
-    "losses": 2
-  },
-  {
-    "userID": "56627406186526",
-    "guesses": [
-      "saver",
-      "saved",
-      "thank",
-      "thank",
-      "thank",
-      "sties"
-    ],
-    "last_day_played": "11/25/2025",
-    "answer": "sties",
-    "last_day_answer_generated": "11/25/2025",
+    "last_day_played": "12/10/2025",
+    "answer": "acute",
+    "last_day_answer_generated": "12/10/2025",
     "wins": 1,
-    "losses": 0
-  },
-  {
-    "userID": "737327406186526",
-    "guesses": [],
-    "last_day_played": "11/25/2025",
-    "answer": "sulks",
-    "last_day_answer_generated": "11/25/2025",
-    "wins": 0,
-    "losses": 1
-  },
-  {
-    "userID": "25919360",
-    "guesses": [],
-    "last_day_played": "11/25/2025",
-    "answer": "bolos",
-    "last_day_answer_generated": "11/25/2025",
-    "wins": 1,
-    "losses": 0
-  },
-  {
-    "userID": "258100266123919360",
-    "guesses": [],
-    "last_day_played": "11/25/2025",
-    "answer": "dwell",
-    "last_day_answer_generated": "11/25/2025",
-    "wins": 1,
-    "losses": 0
-  },
-  {
-    "userID": "5678",
-    "guesses": [
-      "games",
-      "again",
-      "south",
-      "thing"
-    ],
-    "last_day_played": null,
-    "answer": "tight",
-    "last_day_answer_generated": "11/25/2025",
-    "wins": 0,
-    "losses": 0
-  },
-  {
-    "userID": "430904445014900737",
-    "guesses": [],
-    "last_day_played": "11/25/2025",
-    "answer": "oozed",
-    "last_day_answer_generated": "11/25/2025",
-    "wins": 1,
-    "losses": 0
-  },
-  {
-    "userID": "492101961060188181",
-    "guesses": [
-      "vowel",
-      "wheel",
-      "crawl"
-    ],
-    "last_day_played": "12/09/2025",
-    "answer": "crawl",
-    "last_day_answer_generated": "12/09/2025",
-    "wins": 1,
-    "losses": 0
+    "losses": 0,
+    "streak": 3,
+    "didwin": true
   },
   {
     "userID": "566737327406186526",
     "guesses": [],
     "last_day_played": "12/10/2025",
-    "answer": "slate",
+    "answer": "count",
     "last_day_answer_generated": "12/10/2025",
-    "wins": 4,
-    "losses": 0
+    "wins": 2,
+    "losses": 2,
+    "streak": 1,
+    "didwin": true
   }
 ]

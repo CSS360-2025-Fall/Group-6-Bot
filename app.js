@@ -19,7 +19,7 @@ import {
   getUsername
 } from "./utils.js";
 import { getShuffledOptions, getResult } from "./rps.js";
-import { get_answer, validate_guess, write_JSON_object, load_board, already_played, game_won, clear_guesses } from "./wordler.js";
+import { get_answer, validate_guess, write_JSON_object, load_board, already_played, game_won, clear_guesses, get_streak, clear_streak_count, add_streak_count } from "./wordler.js";
 import { flipCoin } from "./cf.js";
 
 import { get_list_of_guesses } from "./wordler.js";
@@ -47,11 +47,11 @@ app.post(
     // Slash commands
     if (type === InteractionType.APPLICATION_COMMAND) {
       const { name } = data;
-if(name === "daily") {
-const userId = req.body.member.user.id;
-const guildId = req.body.guild_id;
-updateLeaderboard(guildId, userId, 50, 1);
-}
+      if (name === "daily") {
+        const userId = req.body.member.user.id;
+        const guildId = req.body.guild_id;
+        updateLeaderboard(guildId, userId, 50, 1);
+      }
       // --- Coinflip command ---
       if (name === "coinflip") {
         try {
@@ -136,6 +136,13 @@ updateLeaderboard(guildId, userId, 50, 1);
           context === 0 ? req.body.member.user.id : req.body.user.id;
         write_JSON_object(userId);
 
+        if (subcommand === "streak"){
+          return res.send({
+            type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+            data: { content: get_streak(userId)}
+          });
+        }
+
         if (subcommand === "guess") {
           // Save the Guess & Confirm if it's a valid guess.
           const guess = req.body.data.options[0].options[0].value.toLowerCase();
@@ -144,6 +151,7 @@ updateLeaderboard(guildId, userId, 50, 1);
           const answer = get_answer(userId);
           if (!already_played(userId)) {
             if (guess.toLowerCase() === answer.toLowerCase()) {
+              add_streak_count(userId);
               points = points - (get_list_of_guesses(userId).length * 200); // Points decrease by 200 for each guess taken
               response_template += `
 ✅ Correct! The word was "${answer}". \nCongratulations <@${userId}>! 🎉\nYou earned ${points} points for guessing the word correctly.`;
@@ -157,17 +165,20 @@ updateLeaderboard(guildId, userId, 50, 1);
               response_template = validate_guess(guess, userId)[1];
             }
           } else {
+            clear_guesses(userId);
             let won_string = "";
             if (game_won(userId)) {
               won_string += "won!";
             } else {
+              clear_streak_count(userId);
               won_string += "lost!";
             }
             response_template += `
 <@${userId}>: You've already completed the Wordle Today.
 You ${won_string} The answer was ${answer} 
-Play again tommorow.`
-            clear_guesses(userId);
+Play again tommorow.
+
+${get_streak(userId)}`
           }
           const board = await load_board(userId);
 

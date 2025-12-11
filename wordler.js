@@ -1,5 +1,6 @@
 import { readFile } from 'fs/promises';
 import fs from 'fs';
+import e from 'express';
 
 // curl --location --request POST "https://api.imgbb.com/1/upload?expiration=600&key=cad93104ca28e3a641679cf17212d2e5" --form "image=@/home/richipeu/Group-6-Bot/data/board.png"
 
@@ -38,6 +39,8 @@ function create_JSON_object(userId, guesses = []) {
         last_day_answer_generated: null,
         wins: 0,
         losses: 0,
+        streak: 0,
+        didwin: null
     };
 }
 
@@ -141,12 +144,14 @@ export function validate_guess(guess, userId) {
             error_response += "\nYou've exceeded the amount of guesses you can make!";
             user.losses += 1;
             user.guesses.push(guess);
+            user.didwin = false;
             fs.writeFileSync(wordle_file, JSON.stringify(users, null, 2));
         }
         return [false, error_response];
     }
     if (guess == user.answer) {
         user.wins += 1;
+        user.didwin = true;
     }
     user.guesses.push(guess);
     fs.writeFileSync(wordle_file, JSON.stringify(users, null, 2));
@@ -183,7 +188,18 @@ export function does_user_exist(userId) {
 }
 
 export function game_won(userId) {
-    return get_list_of_guesses(userId).includes(get_answer(userId));
+    // Ensure the leaderboard file exists
+    if (!fs.existsSync(wordle_file)) {
+        // If not, create an empty wordle file.
+        fs.writeFileSync(wordle_file, JSON.stringify([], null, 2), 'utf8');
+    }
+
+    const raw_data = fs.readFileSync(wordle_file, 'utf8');
+    const users = JSON.parse(raw_data);
+
+    // Check if user exists
+    let user = users.find(user => user.userID === userId);
+    return user.didwin;
 }
 
 export function already_played(userId) {
@@ -203,6 +219,7 @@ export function already_played(userId) {
     if (user.last_day_played == get_date()) {
         return true;
     }
+    user.didwin = null;
     return false;
 }
 
@@ -217,7 +234,51 @@ export function clear_guesses(userId) {
 
     // Check if user exists
     let user = users.find(user => user.userID === userId);
-    const empty_arr = [];
+    let empty_arr = [];
     user.guesses = empty_arr;
+    fs.writeFileSync(wordle_file, JSON.stringify(users, null, 2));
+}
+
+export function get_streak(userId) {
+    if (!fs.existsSync(wordle_file)) {
+        // If not, create an empty wordle file.
+        fs.writeFileSync(wordle_file, JSON.stringify([], null, 2), 'utf8');
+    }
+
+    const raw_data = fs.readFileSync(wordle_file, 'utf8');
+    const users = JSON.parse(raw_data);
+
+    // Check if user exists
+    let user = users.find(user => user.userID === userId);
+    return "\nCurrent Streak: " + user.streak;
+}
+
+export function add_streak_count(userId) {
+    if (!fs.existsSync(wordle_file)) {
+        // If not, create an empty wordle file.
+        fs.writeFileSync(wordle_file, JSON.stringify([], null, 2), 'utf8');
+    }
+
+    const raw_data = fs.readFileSync(wordle_file, 'utf8');
+    const users = JSON.parse(raw_data);
+
+    // Check if user exists
+    let user = users.find(user => user.userID === userId);
+    user.streak += 1;
+    fs.writeFileSync(wordle_file, JSON.stringify(users, null, 2));
+}
+
+export function clear_streak_count(userId) {
+    if (!fs.existsSync(wordle_file)) {
+        // If not, create an empty wordle file.
+        fs.writeFileSync(wordle_file, JSON.stringify([], null, 2), 'utf8');
+    }
+
+    const raw_data = fs.readFileSync(wordle_file, 'utf8');
+    const users = JSON.parse(raw_data);
+
+    // Check if user exists
+    let user = users.find(user => user.userID === userId);
+    user.streak = 0;
     fs.writeFileSync(wordle_file, JSON.stringify(users, null, 2));
 }

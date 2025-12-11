@@ -110,12 +110,17 @@ const WORDLE_COMMAND = {
       options: [
         {
           type: 3,
-          name: "Type Your Guess:",
+          name: "5-letter-word",
           description: "Your guess",
           required: true,
         }
       ]
-    }
+    },
+    {
+      type: 1,
+      name: "streak",
+      description: "Check Your Current Streak!",
+    },
   ],
   integration_types: [0, 1],
   contexts: [0, 1, 2],
