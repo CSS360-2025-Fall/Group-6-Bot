@@ -112,6 +112,7 @@ export function get_date() {
 
 
 export function validate_guess(guess, userId) {
+    let arr = [];
     if (!fs.existsSync(wordle_file)) {
         // If not, create an empty wordle file.
         fs.writeFileSync(wordle_file, JSON.stringify([], null, 2), 'utf8');
@@ -126,20 +127,33 @@ export function validate_guess(guess, userId) {
     if (guess == user.answer || !(guess_amount < MAX_ATTEMPTS)) {
         user.last_day_played = get_date();
     }
-    if (!word_in_list(guess) || !(typeof guess === 'string' && guess.length === WORD_LEN && /^[A-Za-z]+$/.test(guess)) || !(guess_amount < MAX_ATTEMPTS)) {
+    if (!word_in_list(guess) || !(typeof guess === 'string' && /^[A-Za-z]+$/.test(guess)) || !guess.length === WORD_LEN || !(guess_amount < MAX_ATTEMPTS)) {
+        let error_response = "";
+        if (!word_in_list(guess)) {
+            error_response += "\nWord Not in List!";
+        }
+        if (!(typeof guess === 'string' && /^[A-Za-z]+$/.test(guess))) {
+            error_response += "\nGuess Contains Invalid Characters!";
+        }
+        if (!(guess.length == WORD_LEN)) {
+            error_response += "\nGuess Incorrect Length!";
+        }
         if (!(guess_amount < MAX_ATTEMPTS)) {
+            error_response += "\nYou've exceeded the amount of guesses you can make!";
             user.losses += 1;
             user.guesses.push(guess);
             fs.writeFileSync(wordle_file, JSON.stringify(users, null, 2));
         }
-        return false;
+        arr = [false, error_response];
+        return arr;
     }
     if (guess == user.answer) {
         user.wins += 1;
     }
     user.guesses.push(guess);
     fs.writeFileSync(wordle_file, JSON.stringify(users, null, 2));
-    return true;
+    arr = [true, null];
+    return arr;
 }
 
 function word_in_list(guess) {

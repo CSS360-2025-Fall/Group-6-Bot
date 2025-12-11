@@ -143,5 +143,14 @@
     "last_day_answer_generated": "12/09/2025",
     "wins": 1,
     "losses": 0
+  },
+  {
+    "userID": "566737327406186526",
+    "guesses": [],
+    "last_day_played": "12/10/2025",
+    "answer": "slate",
+    "last_day_answer_generated": "12/10/2025",
+    "wins": 4,
+    "losses": 0
   }
 ]

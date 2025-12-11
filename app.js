@@ -147,15 +147,15 @@ updateLeaderboard(guildId, userId, 50, 1);
             if (guess.toLowerCase() === answer.toLowerCase()) {
               points = points - (get_list_of_guesses(userId).length * 200); // Points decrease by 200 for each guess taken
               response_template += `${response_string}
-              ✅ Correct! The word was "${answer}". \nCongratulations <@${userId}>! 🎉\nYou earned ${points} points for guessing the word correctly.`;
+✅ Correct! The word was "${answer}". \nCongratulations <@${userId}>! 🎉\nYou earned ${points} points for guessing the word correctly.`;
               updateLeaderboard(req.body.guild_id, userId, points, 1); // Add points for winning and increment games played
               console.log(`User ${userId} earned ${points} points for guessing the word correctly.`);
             } else {
               response_template += `${response_string}
-              <@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
+<@${userId}>'s guess: ❌ "${guess}" is not the word of the day. Try again!`;
             }
-            if (!validate_guess(guess, userId)) {
-              response_template = "\nWrong Guess Format, try again!";
+            if (!validate_guess(guess, userId)[0]) {
+              response_template = validate_guess(guess, userId)[1];
             }
           } else {
             let won_string = "";
@@ -164,7 +164,8 @@ updateLeaderboard(guildId, userId, 50, 1);
             } else {
               won_string += "lost!";
             }
-            response_template += `<@${userId}>: You've already completed the Wordle Today.
+            response_template += `
+<@${userId}>: You've already completed the Wordle Today.
 You ${won_string} The answer was ${answer} 
 Play again tommorow.`
             clear_guesses(userId);
