@@ -12,7 +12,6 @@ import {
   StreamType,
 } from "@discordjs/voice";
 import { spawn } from "child_process";
-import { access } from "fs/promises";
 
 console.log("🎵 MUSIC BOT STARTING...");
 
@@ -25,38 +24,85 @@ const client = new Client({
   ],
 });
 
-// Track active players for each guild
-const activeConnections = new Map();
+// Queue system - store queue for each guild
+const guildQueues = new Map();
+
+// Store active processes for cleanup
+const activeProcesses = new Map();
 
 client.once("ready", () => {
   console.log(`✅ MUSIC BOT READY! Logged in as ${client.user.tag}`);
 });
 
-async function playAudio(url, voiceChannel, textChannel) {
-  try {
-    // Join voice channel
-    const connection = joinVoiceChannel({
-      channelId: voiceChannel.id,
-      guildId: voiceChannel.guild.id,
-      adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+// Get or create queue for a guild
+function getQueue(guildId) {
+  if (!guildQueues.has(guildId)) {
+    guildQueues.set(guildId, {
+      songs: [],
+      isPlaying: false,
+      connection: null,
+      player: null,
+      textChannel: null,
     });
+  }
+  return guildQueues.get(guildId);
+}
 
-    await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
-    console.log("✅ Connected to voice channel");
+// Helper function to cleanup processes
+function cleanupProcesses(guildId) {
+  const processes = activeProcesses.get(guildId);
+  if (processes) {
+    try {
+      if (processes.ytdlp && !processes.ytdlp.killed) {
+        processes.ytdlp.kill("SIGKILL");
+      }
+      if (processes.ffmpeg && !processes.ffmpeg.killed) {
+        processes.ffmpeg.kill("SIGKILL");
+      }
+    } catch (err) {
+      // Ignore cleanup errors
+    }
+    activeProcesses.delete(guildId);
+  }
+}
+
+async function playNextInQueue(guildId) {
+  const queue = getQueue(guildId);
+
+  if (queue.songs.length === 0) {
+    queue.isPlaying = false;
+    queue.textChannel?.send(
+      "📭 Queue is empty! Add more songs with `!play <url>`",
+    );
+
+    // Leave after 30 seconds if no new songs
+    setTimeout(() => {
+      const currentQueue = getQueue(guildId);
+      if (currentQueue.songs.length === 0 && currentQueue.connection) {
+        currentQueue.connection.destroy();
+        currentQueue.textChannel?.send(
+          "👋 Leaving voice channel due to inactivity.",
+        );
+        guildQueues.delete(guildId);
+        activeProcesses.delete(guildId);
+      }
+    }, 30000);
+    return;
+  }
+
+  const song = queue.songs[0];
+  queue.isPlaying = true;
+
+  try {
+    console.log(`🎵 Playing: ${song.title}`);
 
     // Detect source
-    const isYouTube = url.includes("youtube.com") || url.includes("youtu.be");
-    const isSoundCloud = url.includes("soundcloud.com");
-
+    const isSoundCloud = song.url.includes("soundcloud.com");
     let ytdlpArgs;
 
     if (isSoundCloud) {
-      // SoundCloud - usually works better
-      console.log("🎵 Detected SoundCloud");
-      ytdlpArgs = ["-f", "bestaudio", "-o", "-", "--no-playlist", url];
+      ytdlpArgs = ["-f", "bestaudio", "-o", "-", "--no-playlist", song.url];
     } else {
-      // YouTube - try with age-bypass and different client
-      console.log("🎵 Detected YouTube - trying with bypass...");
       ytdlpArgs = [
         "--cookies-from-browser",
         "chrome",
@@ -68,14 +114,11 @@ async function playAudio(url, voiceChannel, textChannel) {
         "--no-check-certificates",
         "--extractor-args",
         "youtube:player_client=web",
-        url,
+        song.url,
       ];
     }
 
-    console.log("🔍 Starting yt-dlp...");
     const ytdlp = spawn("yt-dlp", ytdlpArgs);
-
-    // Pipe yt-dlp output to FFmpeg for proper encoding
     const ffmpeg = spawn("ffmpeg", [
       "-i",
       "pipe:0",
@@ -91,77 +134,63 @@ async function playAudio(url, voiceChannel, textChannel) {
       "pipe:1",
     ]);
 
+    // Store processes for cleanup
+    activeProcesses.set(guildId, { ytdlp, ffmpeg });
+
     ytdlp.stdout.pipe(ffmpeg.stdin);
+
+    // Handle pipe errors silently
+    ytdlp.stdout.on("error", () => {});
+    ffmpeg.stdin.on("error", () => {});
 
     const resource = createAudioResource(ffmpeg.stdout, {
       inputType: StreamType.OggOpus,
     });
 
-    const player = createAudioPlayer();
-    connection.subscribe(player);
+    if (!queue.player) {
+      queue.player = createAudioPlayer();
+      queue.connection.subscribe(queue.player);
 
-    // Store active connection
-    activeConnections.set(voiceChannel.guild.id, { connection, player });
+      queue.player.on(AudioPlayerStatus.Idle, () => {
+        console.log("🎵 Song finished, playing next...");
+        const finishedSong = queue.songs.shift(); // Remove finished song
+        console.log(`Removed from queue: ${finishedSong?.title}`);
+        console.log(`Songs remaining: ${queue.songs.length}`);
 
-    player.play(resource);
-
-    textChannel.send("🎵 **Now Playing!**");
-
-    player.on(AudioPlayerStatus.Playing, () => {
-      console.log("🎵 Audio playing");
-    });
-
-    player.on(AudioPlayerStatus.Idle, () => {
-      console.log("🎵 Finished");
-      textChannel.send("⏹️ Finished!");
-      setTimeout(() => {
-        if (connection.state.status !== "destroyed") {
-          connection.destroy();
+        if (queue.songs.length > 0) {
+          // Small delay before playing next to avoid issues
+          setTimeout(() => {
+            playNextInQueue(guildId);
+          }, 500);
+        } else {
+          queue.isPlaying = false;
+          queue.textChannel?.send("📭 Queue finished!");
         }
-        activeConnections.delete(voiceChannel.guild.id);
-      }, 1000);
-    });
+      });
 
-    player.on("error", (error) => {
-      console.error("❌ Player error:", error);
-      textChannel.send("❌ Playback error!");
-      if (connection.state.status !== "destroyed") {
-        connection.destroy();
-      }
-      activeConnections.delete(voiceChannel.guild.id);
-    });
+      queue.player.on("error", (error) => {
+        console.error("❌ Player error:", error);
+        queue.textChannel?.send("❌ Playback error! Skipping to next song...");
+        queue.songs.shift();
+        playNextInQueue(guildId);
+      });
+    }
 
-    // Error handling for processes
-    ytdlp.stderr.on("data", (data) => {
-      const msg = data.toString();
-      if (msg.includes("ERROR")) {
-        console.error(`yt-dlp error: ${msg}`);
-      }
-    });
+    queue.player.play(resource);
+    queue.textChannel?.send(
+      `🎵 **Now Playing:** ${song.title}\n📝 Requested by: ${song.requester}`,
+    );
 
-    ytdlp.on("error", (error) => {
-      console.error("❌ yt-dlp spawn error:", error);
-      textChannel.send("❌ Failed to start download!");
-      if (connection.state.status !== "destroyed") {
-        connection.destroy();
-      }
-      activeConnections.delete(voiceChannel.guild.id);
-    });
-
-    ffmpeg.stderr.on("data", (data) => {
-      const msg = data.toString();
-      // Only log actual errors
-      if (msg.toLowerCase().includes("error")) {
-        console.error(`FFmpeg: ${msg}`);
-      }
-    });
-
-    ffmpeg.on("error", (error) => {
-      console.error("❌ FFmpeg error:", error);
-    });
+    // Error handling - silent
+    ytdlp.stderr.on("data", () => {});
+    ytdlp.on("error", () => {});
+    ffmpeg.stderr.on("data", () => {});
+    ffmpeg.on("error", () => {});
   } catch (error) {
-    console.error("❌ Error:", error);
-    throw error;
+    console.error("❌ Play error:", error);
+    queue.textChannel?.send("❌ Error playing song! Skipping...");
+    queue.songs.shift();
+    playNextInQueue(guildId);
   }
 }
 
@@ -169,7 +198,9 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (!message.guild) return;
 
-  // !play command
+  const guildId = message.guild.id;
+
+  // !play command - Add to queue
   if (message.content.startsWith("!play")) {
     const url = message.content.slice(5).trim();
     if (!url) {
@@ -184,32 +215,148 @@ client.on("messageCreate", async (message) => {
     const voiceChannel = message.member?.voice.channel;
     if (!voiceChannel) return message.reply("❌ Join a voice channel first!");
 
-    try {
-      await message.channel.send("🔍 Loading...");
-      await playAudio(url, voiceChannel, message.channel);
-    } catch (error) {
-      console.error("❌ Play error:", error);
-      message.reply(
-        "❌ Error playing music! Try:\n• A different video\n• SoundCloud instead (more reliable)\n• Wait 30 seconds and try again",
+    const queue = getQueue(guildId);
+    queue.textChannel = message.channel;
+
+    // Add song to queue
+    const song = {
+      url: url,
+      title: url.includes("soundcloud") ? "SoundCloud Track" : "YouTube Video",
+      requester: message.author.tag,
+    };
+
+    queue.songs.push(song);
+
+    // Join voice channel if not connected
+    if (!queue.connection) {
+      try {
+        queue.connection = joinVoiceChannel({
+          channelId: voiceChannel.id,
+          guildId: guildId,
+          adapterCreator: voiceChannel.guild.voiceAdapterCreator,
+        });
+        await entersState(
+          queue.connection,
+          VoiceConnectionStatus.Ready,
+          30_000,
+        );
+        console.log("✅ Connected to voice channel");
+      } catch (error) {
+        console.error("❌ Failed to join:", error);
+        return message.reply("❌ Failed to join voice channel!");
+      }
+    }
+
+    if (queue.songs.length === 1 && !queue.isPlaying) {
+      // Start playing if this is the first song
+      message.channel.send("🔍 Loading and playing...");
+      playNextInQueue(guildId);
+    } else {
+      // Song added to queue
+      message.channel.send(
+        `✅ **Added to queue (#${queue.songs.length}):** ${song.title}\nRequested by: ${song.requester}`,
       );
-      const connection = getVoiceConnection(message.guild.id);
-      if (connection) connection.destroy();
-      activeConnections.delete(message.guild.id);
     }
   }
 
-  // !stop command
-  if (message.content.startsWith("!stop")) {
-    const active = activeConnections.get(message.guild.id);
-    const connection = getVoiceConnection(message.guild.id);
+  // !queue command - Show current queue
+  if (message.content.startsWith("!queue")) {
+    const queue = getQueue(guildId);
 
-    if (active || connection) {
-      if (connection) connection.destroy();
-      activeConnections.delete(message.guild.id);
-      message.reply("⏹️ Stopped!");
-    } else {
-      message.reply("❌ Nothing is playing!");
+    if (queue.songs.length === 0) {
+      return message.reply("📭 Queue is empty! Add songs with `!play <url>`");
     }
+
+    let queueMessage = "**🎵 Current Queue:**\n\n";
+    queue.songs.forEach((song, index) => {
+      if (index === 0) {
+        queueMessage += `**▶️ Now Playing:** ${song.title}\nRequested by: ${song.requester}\n\n`;
+      } else {
+        queueMessage += `**${index}.** ${song.title}\nRequested by: ${song.requester}\n`;
+      }
+    });
+
+    queueMessage += `\n📊 Total songs in queue: ${queue.songs.length}`;
+    message.reply(queueMessage);
+  }
+
+  // !skip command - Skip current song
+  if (message.content.startsWith("!skip")) {
+    const queue = getQueue(guildId);
+
+    if (!queue.isPlaying || queue.songs.length === 0) {
+      return message.reply("❌ Nothing is playing!");
+    }
+
+    const skippedSong = queue.songs[0];
+    message.channel.send(`⏭️ Skipping: ${skippedSong.title}`);
+
+    // Clean up old processes first
+    cleanupProcesses(guildId);
+
+    // Stop current player to trigger Idle event
+    if (queue.player) {
+      queue.player.stop();
+    }
+  }
+
+  // !clear command - Clear queue
+  if (message.content.startsWith("!clear")) {
+    const queue = getQueue(guildId);
+
+    if (queue.songs.length === 0) {
+      return message.reply("❌ Queue is already empty!");
+    }
+
+    const count = queue.songs.length;
+    queue.songs = [];
+    queue.isPlaying = false;
+
+    if (queue.player) {
+      queue.player.stop();
+    }
+
+    message.reply(`🗑️ Cleared ${count} song(s) from queue!`);
+  }
+
+  // !stop command - Stop and leave
+  if (message.content.startsWith("!stop")) {
+    const queue = getQueue(guildId);
+
+    if (!queue.connection) {
+      return message.reply("❌ Nothing is playing!");
+    }
+
+    // Clean up processes
+    cleanupProcesses(guildId);
+
+    queue.songs = [];
+    queue.isPlaying = false;
+
+    if (queue.connection) {
+      queue.connection.destroy();
+    }
+
+    guildQueues.delete(guildId);
+    message.reply("⏹️ Stopped and left voice channel!");
+  }
+
+  // !nowplaying or !np command
+  if (
+    message.content.startsWith("!nowplaying") ||
+    message.content.startsWith("!np")
+  ) {
+    const queue = getQueue(guildId);
+
+    if (!queue.isPlaying || queue.songs.length === 0) {
+      return message.reply("❌ Nothing is playing!");
+    }
+
+    const current = queue.songs[0];
+    message.reply(
+      `🎵 **Now Playing:**\n${current.title}\n👤 Requested by: ${current.requester}\n\n` +
+        `📊 Songs in queue: ${queue.songs.length - 1}`,
+    );
   }
 
   // !test command
@@ -220,17 +367,22 @@ client.on("messageCreate", async (message) => {
   // !help command
   if (message.content.startsWith("!help")) {
     message.reply(
-      `**🎵 Music Bot Commands:**\n` +
-        `\`!play <url>\` - Play audio from URL\n` +
+      `**🎵 Music Bot Commands:**\n\n` +
+        `**Queue System:**\n` +
+        `\`!play <url>\` - Add song to queue and play\n` +
+        `\`!queue\` - Show current queue\n` +
+        `\`!skip\` - Skip current song\n` +
+        `\`!clear\` - Clear entire queue\n` +
+        `\`!nowplaying\` or \`!np\` - Show current song\n` +
         `\`!stop\` - Stop playing and leave\n` +
         `\`!test\` - Test bot status\n\n` +
         `**Supported Sources:**\n` +
         `✅ SoundCloud (Most reliable!)\n` +
-        `⚠️ YouTube (May have issues due to restrictions)\n\n` +
+        `⚠️ YouTube (May have issues)\n\n` +
         `**Tips:**\n` +
-        `• SoundCloud works better than YouTube\n` +
-        `• If YouTube fails, try SoundCloud or wait 30 seconds\n` +
-        `• Some videos may be region-locked`,
+        `• Songs play automatically one after another\n` +
+        `• Use \`!queue\` to see what's coming next\n` +
+        `• SoundCloud works better than YouTube`,
     );
   }
 });
