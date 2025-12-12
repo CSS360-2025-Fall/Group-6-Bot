@@ -16,5 +16,8 @@ Earning enough points will grant you access to rewards you can use within the se
 ## Leaderboard
 Use the leaderboard command to see who has the most points!
 
+## Music Bot
+Use the music bot to listen and share music with friends!
+
 ## Getting started
 Get started by claiming points every day with the /daily command.
